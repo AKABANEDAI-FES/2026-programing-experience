@@ -1,0 +1,29 @@
+{
+  "name": "2026-programing-experience",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=frontend\" \"npm run dev --workspace=backend\"",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AKABANEDAI-FES/2026-programing-experience.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/AKABANEDAI-FES/2026-programing-experience/issues"
+  },
+  "homepage": "https://github.com/AKABANEDAI-FES/2026-programing-experience#readme",
+  "devDependencies": {
+    "concurrently": "^10.0.3"
+  }
+}
