@@ -9,6 +9,8 @@
   ],
   "scripts": {
     "dev": "concurrently \"npm run dev --workspace=frontend\" \"npm run dev --workspace=backend\"",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -24,6 +26,8 @@
   },
   "homepage": "https://github.com/AKABANEDAI-FES/2026-programing-experience#readme",
   "devDependencies": {
-    "concurrently": "^10.0.3"
+    "concurrently": "^10.0.3",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.6"
   }
 }
