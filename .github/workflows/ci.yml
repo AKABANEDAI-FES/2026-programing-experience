@@ -31,4 +31,4 @@ jobs:
         run: npx tsc --noEmit -p backend/tsconfig.json
 
       - name: Type check (frontend)
-        run: npx tsc --noEmit -p frontend/tsconfig.json
+        run: npx tsc -b frontend
