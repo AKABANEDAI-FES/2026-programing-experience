@@ -1,0 +1,6 @@
+.app {
+  min-height: 100svh;
+  display: flex;
+  background: #f7faf9;
+  color: #14201d;
+}
