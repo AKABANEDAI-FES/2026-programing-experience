@@ -1,0 +1,154 @@
+.screen {
+  position: relative;
+  width: 100%;
+  min-height: 100svh;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgb(174 226 235 / 74%) 0%, rgb(84 173 196 / 78%) 44%, rgb(30 99 135 / 92%) 100%),
+    #1c7ed6;
+}
+
+.hud {
+  position: absolute;
+  z-index: 3;
+  top: 20px;
+  left: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgb(7 38 55 / 36%);
+}
+
+.title,
+.status {
+  margin: 0;
+  font-weight: 800;
+}
+
+.title {
+  font-size: 24px;
+}
+
+.status {
+  font-size: 18px;
+}
+
+.sea {
+  position: absolute;
+  inset: 0;
+}
+
+.sea::before,
+.sea::after {
+  position: absolute;
+  left: -10%;
+  width: 120%;
+  height: 140px;
+  content: "";
+  background: repeating-radial-gradient(ellipse at center, rgb(255 255 255 / 30%) 0 2px, transparent 3px 28px);
+  opacity: 0.45;
+  animation: drift 24s linear infinite;
+}
+
+.sea::before {
+  top: 18%;
+}
+
+.sea::after {
+  bottom: 12%;
+  animation-duration: 34s;
+}
+
+.creature {
+  position: absolute;
+  z-index: 2;
+  left: -180px;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  animation-name: crossSea;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.creature img {
+  width: 100%;
+  aspect-ratio: 1.25;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 16px rgb(4 34 49 / 22%));
+}
+
+.bubble {
+  max-width: 180px;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #14201d;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  box-shadow: 0 8px 18px rgb(4 34 49 / 20%);
+}
+
+.swim img {
+  animation: swimMotion 2.8s ease-in-out infinite;
+}
+
+.jump img {
+  animation: jumpMotion 1.2s ease-in-out infinite;
+}
+
+.spin img {
+  animation: spinMotion 2.4s linear infinite;
+}
+
+@keyframes crossSea {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(calc(100vw + 360px));
+  }
+}
+
+@keyframes swimMotion {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+
+  50% {
+    transform: translateY(14px) rotate(3deg);
+  }
+}
+
+@keyframes jumpMotion {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-38px);
+  }
+}
+
+@keyframes spinMotion {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes drift {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(180px);
+  }
+}

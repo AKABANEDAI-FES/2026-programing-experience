@@ -1,9 +1,16 @@
 export type DrawMode = "free" | "coloring";
 
+export type MotionType = "swim" | "jump" | "spin";
+export type SpeedType = "slow" | "normal" | "fast";
+
 export interface MoveCommand {
   type: "move";
-  /** #9 で確定。確定したら 'swim' | 'jump' などのユニオン型に絞る */
-  motion: string;
+  motion: MotionType;
+}
+
+export interface SpeedCommand {
+  type: "speed";
+  value: SpeedType;
 }
 
 export interface SayCommand {
@@ -11,7 +18,7 @@ export interface SayCommand {
   text: string;
 }
 
-export type Command = MoveCommand | SayCommand;
+export type Command = MoveCommand | SpeedCommand | SayCommand;
 
 /** 画面③で追加できるコマンドの上限 */
 export const MAX_COMMANDS = 5;
@@ -29,6 +36,7 @@ export interface ReleaseRequest {
 export interface ReleaseSuccessResponse {
   success: true;
   message: string;
+  creature?: import("./display").Creature;
 }
 
 export interface ReleaseErrorResponse {

@@ -1,0 +1,33 @@
+.screen {
+  width: 100%;
+  display: grid;
+  place-items: center;
+  padding: 40px 24px;
+}
+
+.panel {
+  width: min(560px, 100%);
+  padding: 40px;
+  border: 2px solid #b9d8d0;
+  border-radius: 8px;
+  background: #ffffff;
+  text-align: center;
+}
+
+.label {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #2f6e63;
+}
+
+.title {
+  margin: 0;
+  font-size: 40px;
+  line-height: 1.2;
+}
+
+.message {
+  margin: 16px 0 0;
+  color: #52635f;
+}

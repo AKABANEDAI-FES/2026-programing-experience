@@ -1,0 +1,130 @@
+.screen {
+  width: 100%;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 28px;
+}
+
+.header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.label {
+  margin: 0 0 6px;
+  color: #316b5f;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.title {
+  margin: 0;
+  font-size: 32px;
+  line-height: 1.2;
+}
+
+.releaseButton {
+  min-width: 148px;
+  padding: 14px 22px;
+  border: 2px solid #2f6e63;
+  border-radius: 8px;
+  background: #2f6e63;
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.releaseButton:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.layout {
+  flex: 1;
+  min-height: 560px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 18px;
+}
+
+.blocklyShell,
+.preview {
+  border: 2px solid #d8e4e0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.blocklyShell {
+  min-height: 560px;
+  overflow: hidden;
+}
+
+.blockly {
+  width: 100%;
+  height: 100%;
+  min-height: 560px;
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+
+.creaturePreview {
+  width: 100%;
+  aspect-ratio: 1.2;
+  object-fit: contain;
+  border: 1px solid #d8e4e0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.counter {
+  display: inline-flex;
+  align-self: start;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #e7f3f0;
+  color: #2f6e63;
+  font-weight: 700;
+}
+
+.commandList {
+  margin: 0;
+  padding-left: 20px;
+  color: #42524e;
+}
+
+.commandList li {
+  margin: 6px 0;
+}
+
+.error {
+  margin: auto 0 0;
+  padding: 12px;
+  border-radius: 8px;
+  background: #fff0f0;
+  color: #c92a2a;
+  font-weight: 700;
+}
+
+@media (max-width: 880px) {
+  .screen {
+    padding: 20px 14px;
+  }
+
+  .header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}

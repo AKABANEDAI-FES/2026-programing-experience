@@ -1,20 +1,21 @@
 .screen {
   width: 100%;
+  min-height: 100svh;
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  padding: 40px;
-  box-sizing: border-box;
+  gap: 20px;
+  padding: 32px;
 }
 
 .header {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .label {
-  margin: 0;
+  margin: 0 0 6px;
   font-size: 14px;
   font-weight: 700;
   color: #316b5f;
@@ -24,32 +25,104 @@
   margin: 0;
   font-size: 32px;
   line-height: 1.2;
+}
+
+.nextButton,
+.toolButton {
+  border: 2px solid #2f6e63;
+  border-radius: 8px;
+  background: #2f6e63;
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nextButton {
+  min-width: 132px;
+  padding: 14px 22px;
+}
+
+.workspace {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 18px;
+}
+
+.tools {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border: 2px solid #d8e4e0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.toolGroup {
+  display: grid;
+  grid-template-columns: repeat(3, 40px);
+  gap: 10px;
+}
+
+.swatch {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #aebfba;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.activeSwatch {
+  outline: 3px solid #2f6e63;
+  outline-offset: 3px;
+}
+
+.sliderLabel {
+  display: grid;
+  gap: 8px;
+  color: #52635f;
   font-weight: 700;
 }
 
-.placeholder {
-  flex: 1;
-  min-height: 420px;
-  display: grid;
-  place-items: center;
-  border: 2px dashed #aebfba;
+.toolButton {
+  padding: 10px 12px;
+  background: #ffffff;
+  color: #2f6e63;
+}
+
+.activeTool {
+  background: #2f6e63;
+  color: #ffffff;
+}
+
+.canvas {
+  width: 100%;
+  min-height: 480px;
+  align-self: stretch;
+  border: 2px solid #aebfba;
   border-radius: 8px;
   background: #ffffff;
-  color: #52635f;
+  touch-action: none;
 }
 
-.placeholder p {
-  margin: 0;
-  padding: 24px;
-  text-align: center;
-}
-
-@media (max-width: 640px) {
+@media (max-width: 760px) {
   .screen {
-    padding: 24px 16px;
+    padding: 20px 14px;
   }
 
-  .title {
-    font-size: 28px;
+  .header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .tools {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
   }
 }
