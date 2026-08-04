@@ -1,2 +1,2 @@
-export * from "./release";
-export * from "./display";
+export * from './release';
+export * from './display';

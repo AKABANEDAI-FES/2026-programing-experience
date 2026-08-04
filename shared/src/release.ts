@@ -1,13 +1,13 @@
-export type DrawMode = "free" | "coloring";
+export type DrawMode = 'free' | 'coloring';
 
 export interface MoveCommand {
-  type: "move";
+  type: 'move';
   /** #9 で確定。確定したら 'swim' | 'jump' などのユニオン型に絞る */
   motion: string;
 }
 
 export interface SayCommand {
-  type: "say";
+  type: 'say';
   text: string;
 }
 
