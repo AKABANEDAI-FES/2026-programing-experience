@@ -20,7 +20,11 @@ export function DrawingScreen({ mode }: DrawingScreenProps) {
         </h1>
       </div>
       <div className={styles.placeholder} aria-label={`${modeLabels[mode]}の描画エリア`}>
-        <p>{mode === 'free' ? '白紙キャンバスをここに実装します。' : '塗り絵の下絵をここに実装します。'}</p>
+        <p>
+          {mode === 'free'
+            ? '白紙キャンバスをここに実装します。'
+            : '塗り絵の下絵をここに実装します。'}
+        </p>
       </div>
     </section>
   );
