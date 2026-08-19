@@ -6,7 +6,7 @@ type Bindings = {
   ALLOWED_ORIGINS?: string;
 };
 
-const DEVELOPMENT_ORIGIN = 'http://localhost:5173';
+const DEVELOPMENT_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173'];
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -14,10 +14,8 @@ app.use(
   '/api/*',
   cors({
     origin: (origin, c) => {
-      const allowedOriginsSetting = (c.env.ALLOWED_ORIGINS ?? DEVELOPMENT_ORIGIN) as string;
-      const allowedOrigins = allowedOriginsSetting
-        .split(',')
-        .map((allowedOrigin) => allowedOrigin.trim())
+      const allowedOrigins = (c.env.ALLOWED_ORIGINS?.split(',') ?? DEVELOPMENT_ORIGINS)
+        .map((allowedOrigin: string) => allowedOrigin.trim())
         .filter(Boolean);
 
       return allowedOrigins.includes(origin) ? origin : null;
