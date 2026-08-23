@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import type { ReleaseRequest, ReleaseResponse } from 'shared';
+import type { ReleaseResponse } from 'shared';
+import { validateReleaseRequest } from './validation';
 
 type Bindings = {
   ALLOWED_ORIGINS?: string;
@@ -31,7 +32,29 @@ app.get('/', (c) => {
 });
 
 app.post('/api/release', async (c) => {
-  await c.req.json<ReleaseRequest>();
+  let requestBody: unknown;
+
+  try {
+    requestBody = await c.req.json<unknown>();
+  } catch {
+    const errorResponse: ReleaseResponse = {
+      success: false,
+      message: 'リクエストボディは有効なJSON形式で指定してください',
+    };
+
+    return c.json(errorResponse, 400);
+  }
+
+  const validationResult = validateReleaseRequest(requestBody);
+
+  if (!validationResult.success) {
+    const errorResponse: ReleaseResponse = {
+      success: false,
+      message: validationResult.message,
+    };
+
+    return c.json(errorResponse, 400);
+  }
 
   const res: ReleaseResponse = {
     success: true,

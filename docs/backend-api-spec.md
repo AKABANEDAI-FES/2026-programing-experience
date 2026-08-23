@@ -47,6 +47,15 @@
 }
 ```
 
+リクエストが不正な場合 (ステータスコード: 400 Bad Request)
+
+```json
+{
+  "success": false,
+  "message": "mode は \"free\" または \"coloring\" を指定してください"
+}
+```
+
 ### 失敗時 (ステータスコード: 500 Internal Server Error)
 
 ```json
