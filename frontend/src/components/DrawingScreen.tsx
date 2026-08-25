@@ -95,32 +95,40 @@ export function DrawingScreen({ mode }: DrawingScreenProps) {
         <h1 id="drawing-title" className={styles.title}>
           {modeLabels[mode]}
         </h1>
-        <p className={styles.instructions}>マウスや指でドラッグして描いてみよう</p>
+        {mode === 'free' && (
+          <p className={styles.instructions}>マウスや指でドラッグして描いてみよう</p>
+        )}
       </div>
-      <div className={styles.drawingArea}>
-        <svg
-          className={styles.canvas}
-          viewBox={`0 0 ${DRAWING_WIDTH} ${DRAWING_HEIGHT}`}
-          role="img"
-          aria-label={`${modeLabels[mode]}の描画エリア`}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={finishStroke}
-          onPointerCancel={finishStroke}
-        >
-          {strokes.map((stroke) => (
-            <polyline
-              key={stroke.id}
-              points={stroke.points.map(({ x, y }) => `${x},${y}`).join(' ')}
-              fill="none"
-              stroke="#1f2937"
-              strokeWidth={STROKE_WIDTH}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          ))}
-        </svg>
-      </div>
+      {mode === 'free' ? (
+        <div className={styles.drawingArea}>
+          <svg
+            className={styles.canvas}
+            viewBox={`0 0 ${DRAWING_WIDTH} ${DRAWING_HEIGHT}`}
+            role="img"
+            aria-label={`${modeLabels[mode]}の描画エリア`}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={finishStroke}
+            onPointerCancel={finishStroke}
+          >
+            {strokes.map((stroke) => (
+              <polyline
+                key={stroke.id}
+                points={stroke.points.map(({ x, y }) => `${x},${y}`).join(' ')}
+                fill="none"
+                stroke="#1f2937"
+                strokeWidth={STROKE_WIDTH}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            ))}
+          </svg>
+        </div>
+      ) : (
+        <div className={styles.placeholder} aria-label={`${modeLabels[mode]}の描画エリア`}>
+          <p>塗り絵の下絵をここに実装します。</p>
+        </div>
+      )}
     </section>
   );
 }
