@@ -1,26 +1,10 @@
 import type { DrawMode } from 'shared';
+import { DRAW_MODES, DRAW_MODE_COPY } from '../constants/drawModes';
 import styles from './HomeScreen.module.css';
 
 type HomeScreenProps = {
   onSelectMode: (mode: DrawMode) => void;
 };
-
-const modeOptions: Array<{
-  mode: DrawMode;
-  title: string;
-  description: string;
-}> = [
-  {
-    mode: 'free',
-    title: '自由にお絵かき',
-    description: '白紙からキャラクターを描きます。',
-  },
-  {
-    mode: 'coloring',
-    title: 'イニャーの塗り絵',
-    description: '下絵に色を塗ってキャラクターを作ります。',
-  },
-];
 
 export function HomeScreen({ onSelectMode }: HomeScreenProps) {
   return (
@@ -31,15 +15,15 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
           モードを選んでください
         </h1>
         <div className={styles.actions}>
-          {modeOptions.map((option) => (
+          {DRAW_MODES.map((mode) => (
             <button
-              key={option.mode}
+              key={mode}
               type="button"
               className={styles.modeButton}
-              onClick={() => onSelectMode(option.mode)}
+              onClick={() => onSelectMode(mode)}
             >
-              <span className={styles.modeTitle}>{option.title}</span>
-              <span className={styles.modeDescription}>{option.description}</span>
+              <span className={styles.modeTitle}>{DRAW_MODE_COPY[mode].label}</span>
+              <span className={styles.modeDescription}>{DRAW_MODE_COPY[mode].homeDescription}</span>
             </button>
           ))}
         </div>

@@ -20,7 +20,7 @@ function App() {
       {step === 'home' || drawMode === null ? (
         <HomeScreen onSelectMode={handleSelectMode} />
       ) : (
-        <DrawingScreen mode={drawMode} />
+        <DrawingScreen mode={drawMode} onModeChange={setDrawMode} />
       )}
     </main>
   );
