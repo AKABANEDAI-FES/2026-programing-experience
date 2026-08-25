@@ -27,21 +27,29 @@
   font-weight: 700;
 }
 
-.placeholder {
-  flex: 1;
-  min-height: 420px;
-  display: grid;
-  place-items: center;
-  border: 2px dashed #aebfba;
-  border-radius: 8px;
-  background: #ffffff;
+.instructions {
+  margin: 0;
   color: #52635f;
+  font-size: 16px;
 }
 
-.placeholder p {
-  margin: 0;
-  padding: 24px;
-  text-align: center;
+.drawingArea {
+  flex: 1;
+  width: 100%;
+  overflow: hidden;
+  border: 2px solid #aebfba;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 3;
+  background: #ffffff;
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
 }
 
 @media (max-width: 640px) {
