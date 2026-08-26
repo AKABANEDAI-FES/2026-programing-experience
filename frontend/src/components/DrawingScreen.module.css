@@ -27,6 +27,31 @@
   font-weight: 700;
 }
 
+.instructions {
+  margin: 0;
+  color: #52635f;
+  font-size: 16px;
+}
+
+.drawingArea {
+  flex: 1;
+  width: 100%;
+  overflow: hidden;
+  border: 2px solid #aebfba;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 3;
+  background: #ffffff;
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+}
+
 .placeholder {
   flex: 1;
   min-height: 420px;
