@@ -1,9 +1,12 @@
 import { useRef, useState, type PointerEvent } from 'react';
 import type { DrawMode } from 'shared';
+import inyaaOutline from '../assets/inyaa-outline.svg';
+import { DRAW_MODES, DRAW_MODE_COPY } from '../constants/drawModes';
 import styles from './DrawingScreen.module.css';
 
 type DrawingScreenProps = {
   mode: DrawMode;
+  onModeChange: (mode: DrawMode) => void;
 };
 
 type Point = {
@@ -20,15 +23,11 @@ const DRAWING_WIDTH = 1000;
 const DRAWING_HEIGHT = 600;
 const STROKE_WIDTH = 8;
 
-const modeLabels: Record<DrawMode, string> = {
-  free: '自由にお絵かき',
-  coloring: 'イニャーの塗り絵',
-};
-
-export function DrawingScreen({ mode }: DrawingScreenProps) {
+export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const activePointerId = useRef<number | null>(null);
   const nextStrokeId = useRef(0);
+  const copy = DRAW_MODE_COPY[mode];
 
   const getPoint = (event: PointerEvent<SVGSVGElement>): Point => {
     const bounds = event.currentTarget.getBoundingClientRect();
@@ -91,44 +90,53 @@ export function DrawingScreen({ mode }: DrawingScreenProps) {
   return (
     <section className={styles.screen} aria-labelledby="drawing-title">
       <div className={styles.header}>
-        <p className={styles.label}>選択中のモード</p>
+        <p className={styles.label}>おえかきモード</p>
         <h1 id="drawing-title" className={styles.title}>
-          {modeLabels[mode]}
+          {copy.label}
         </h1>
-        {mode === 'free' && (
-          <p className={styles.instructions}>マウスや指でドラッグして描いてみよう</p>
-        )}
+        <p className={styles.description}>{copy.drawingDescription}</p>
       </div>
-      {mode === 'free' ? (
-        <div className={styles.drawingArea}>
-          <svg
-            className={styles.canvas}
-            viewBox={`0 0 ${DRAWING_WIDTH} ${DRAWING_HEIGHT}`}
-            role="img"
-            aria-label={`${modeLabels[mode]}の描画エリア`}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={finishStroke}
-            onPointerCancel={finishStroke}
+
+      <div className={styles.modeSwitcher} role="group" aria-label="おえかきモードを切り替える">
+        {DRAW_MODES.map((option) => (
+          <button
+            key={option}
+            type="button"
+            className={styles.modeButton}
+            aria-pressed={mode === option}
+            onClick={() => onModeChange(option)}
           >
-            {strokes.map((stroke) => (
-              <polyline
-                key={stroke.id}
-                points={stroke.points.map(({ x, y }) => `${x},${y}`).join(' ')}
-                fill="none"
-                stroke="#1f2937"
-                strokeWidth={STROKE_WIDTH}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            ))}
-          </svg>
-        </div>
-      ) : (
-        <div className={styles.placeholder} aria-label={`${modeLabels[mode]}の描画エリア`}>
-          <p>塗り絵の下絵をここに実装します。</p>
-        </div>
-      )}
+            {DRAW_MODE_COPY[option].label}
+          </button>
+        ))}
+      </div>
+
+      <div className={styles.drawingArea}>
+        {mode === 'coloring' && <img className={styles.outline} src={inyaaOutline} alt="" />}
+        <svg
+          className={styles.canvas}
+          viewBox={`0 0 ${DRAWING_WIDTH} ${DRAWING_HEIGHT}`}
+          role="img"
+          aria-label={`${copy.label}の描画エリア`}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={finishStroke}
+          onPointerCancel={finishStroke}
+        >
+          {strokes.map((stroke) => (
+            <polyline
+              key={stroke.id}
+              points={stroke.points.map(({ x, y }) => `${x},${y}`).join(' ')}
+              fill="none"
+              stroke="#1f2937"
+              strokeWidth={STROKE_WIDTH}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          ))}
+        </svg>
+        <p className={styles.drawingHint}>{copy.drawingHint}</p>
+      </div>
     </section>
   );
 }
