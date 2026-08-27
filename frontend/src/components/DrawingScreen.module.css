@@ -70,31 +70,45 @@
   place-items: center;
   position: relative;
   overflow: hidden;
-  border: 2px dashed #aebfba;
+  border: 2px solid #aebfba;
   border-radius: 16px;
   background: #ffffff;
   color: #52635f;
 }
 
+.outline,
+.canvas {
+  grid-area: 1 / 1;
+}
+
 .outline {
   width: min(70%, 460px);
   max-height: 80%;
-  position: absolute;
-  inset: 50% auto auto 50%;
-  transform: translate(-50%, -50%);
   opacity: 0.9;
   pointer-events: none;
   user-select: none;
 }
 
-.drawingHint {
+.canvas {
   z-index: 1;
+  display: block;
+  width: 100%;
+  align-self: stretch;
+  background: transparent;
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+}
+
+.drawingHint {
+  z-index: 2;
   margin: 0;
   align-self: end;
   padding: 12px 18px;
   border-radius: 999px;
   background: rgb(255 255 255 / 88%);
   box-shadow: 0 2px 10px rgb(20 32 29 / 10%);
+  pointer-events: none;
   text-align: center;
 }
 

@@ -24,6 +24,9 @@ jobs:
       - name: Lint (frontend)
         run: npm run lint --workspace=frontend
 
+      - name: Lint (backend)
+        run: npm run lint --workspace=backend
+
       - name: Type check (shared)
         run: npx tsc --noEmit -p shared/tsconfig.json
 
