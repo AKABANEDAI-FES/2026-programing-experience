@@ -19,8 +19,21 @@
 {
   "mode": "free", // 文字列: "free"（自由描画）または "coloring"（塗り絵）
   "image_base64": "data:image/png;base64,...", // 文字列: キャンバスの画像データ
-  "commands": ["move:jump"] // 配列: スクラッチ画面で組んだブロックの命令
+  "commands": [
+    { "type": "move", "motion": "jump" },
+    { "type": "say", "text": "こんにちは" }
+  ] // 最大5件のコマンドオブジェクト配列
 }
+```
+
+`commands` の各要素は以下のいずれかです。`type: "move"` の `motion` は現時点では文字列であり、許可する動きの種類は画面③の実装とあわせて後で制限します。
+
+```json
+{ "type": "move", "motion": "jump" }
+```
+
+```json
+{ "type": "say", "text": "こんにちは" }
 ```
 
 ### レスポンス（バックエンドからの返事）
