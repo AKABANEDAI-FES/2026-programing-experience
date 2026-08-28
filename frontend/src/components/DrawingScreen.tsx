@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } fr
 import type { DrawMode } from 'shared';
 import inyaaOutline from '../assets/inyaa-outline.svg';
 import { DRAW_MODES, DRAW_MODE_COPY } from '../constants/drawModes';
+import { applyFillToEditingLayer } from '../lib/paint/applyFillToEditingLayer';
 import { floodFill, type Rgba } from '../lib/paint/floodFill';
 import styles from './DrawingScreen.module.css';
 
@@ -237,6 +238,7 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
     }
 
     const editingImageData = context.getImageData(0, 0, DRAWING_WIDTH, DRAWING_HEIGHT);
+    const filledMask = new Uint8Array(DRAWING_WIDTH * DRAWING_HEIGHT);
 
     for (let offset = 0; offset < compositeImageData.data.length; offset += 4) {
       if (
@@ -248,11 +250,16 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
         continue;
       }
 
-      editingImageData.data[offset] = fillColor.r;
-      editingImageData.data[offset + 1] = fillColor.g;
-      editingImageData.data[offset + 2] = fillColor.b;
-      editingImageData.data[offset + 3] = fillColor.a;
+      filledMask[offset / 4] = 1;
     }
+
+    applyFillToEditingLayer(
+      editingImageData.data,
+      DRAWING_WIDTH,
+      DRAWING_HEIGHT,
+      filledMask,
+      fillColor,
+    );
 
     saveHistory(context);
     context.globalCompositeOperation = 'source-over';
