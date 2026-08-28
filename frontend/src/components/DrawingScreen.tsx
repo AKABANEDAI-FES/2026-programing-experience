@@ -78,11 +78,6 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
     previousPoint.current = null;
   };
 
-  const resetHistory = () => {
-    history.current = [];
-    setCanUndo(false);
-  };
-
   const saveHistory = (context: CanvasRenderingContext2D) => {
     const entry = {
       imageData: context.getImageData(0, 0, DRAWING_WIDTH, DRAWING_HEIGHT),
@@ -106,27 +101,21 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
     }
 
     const backgroundContext = backgroundCanvas.getContext('2d');
-    const context = canvas.getContext('2d');
-
-    if (backgroundContext === null || context === null) {
+    if (backgroundContext === null) {
       return;
     }
 
     let isCurrent = true;
     isReadyToDraw.current = false;
     cancelActiveStroke();
-    hasDrawing.current = false;
-    setCanClear(false);
-    resetHistory();
 
-    const resetCanvas = () => {
+    const resetBackground = () => {
       backgroundContext.clearRect(0, 0, DRAWING_WIDTH, DRAWING_HEIGHT);
       backgroundContext.fillStyle = '#ffffff';
       backgroundContext.fillRect(0, 0, DRAWING_WIDTH, DRAWING_HEIGHT);
-      context.clearRect(0, 0, DRAWING_WIDTH, DRAWING_HEIGHT);
     };
 
-    resetCanvas();
+    resetBackground();
 
     if (mode === 'free') {
       isReadyToDraw.current = true;
@@ -372,13 +361,6 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
 
   const handleModeChange = (nextMode: DrawMode) => {
     if (nextMode === mode) {
-      return;
-    }
-
-    if (
-      hasDrawing.current &&
-      !window.confirm('モードを切り替えると、現在の絵が消えます。切り替えますか？')
-    ) {
       return;
     }
 
