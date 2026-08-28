@@ -231,7 +231,8 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
       fillColor,
     );
 
-    if (result.aborted || result.filledPixels === 0) {
+    // Canvas端へつながる領域は背景とみなし、閉じた領域だけを塗り潰す。
+    if (result.aborted || result.touchesEdge || result.filledPixels === 0) {
       return;
     }
 

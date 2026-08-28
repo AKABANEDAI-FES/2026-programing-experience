@@ -15,11 +15,17 @@ export type FloodFillOptions = {
 export type FloodFillResult = {
   filledPixels: number;
   aborted: boolean;
+  /** 探索した連結領域が画像の四辺のいずれかに接しているか。 */
+  touchesEdge: boolean;
 };
 
 const DEFAULT_TOLERANCE = 12;
 
-const noOperation = (): FloodFillResult => ({ filledPixels: 0, aborted: false });
+const noOperation = (): FloodFillResult => ({
+  filledPixels: 0,
+  aborted: false,
+  touchesEdge: false,
+});
 
 const isByte = (value: number): boolean => Number.isInteger(value) && value >= 0 && value <= 255;
 
@@ -120,6 +126,7 @@ export function floodFill(
   let queueHead = 0;
   let queueTail = 0;
   let filledPixels = 0;
+  let touchesEdge = false;
 
   const enqueue = (x: number, y: number) => {
     const index = y * width + x;
@@ -189,9 +196,13 @@ export function floodFill(
       right += 1;
     }
 
+    if (left === 0 || right === width - 1 || seedY === 0 || seedY === height - 1) {
+      touchesEdge = true;
+    }
+
     for (let x = left; x <= right; x += 1) {
       if (filledPixels >= limit) {
-        return { filledPixels, aborted: true };
+        return { filledPixels, aborted: true, touchesEdge };
       }
 
       writeFill(x, seedY);
@@ -202,5 +213,5 @@ export function floodFill(
     enqueueRunsAboveOrBelow(left, right, seedY + 1);
   }
 
-  return { filledPixels, aborted: false };
+  return { filledPixels, aborted: false, touchesEdge };
 }
