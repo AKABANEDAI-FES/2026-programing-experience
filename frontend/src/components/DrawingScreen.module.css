@@ -76,15 +76,15 @@
   color: #52635f;
 }
 
-.outline,
+.backgroundCanvas,
 .canvas {
   grid-area: 1 / 1;
 }
 
-.outline {
-  width: min(70%, 460px);
-  max-height: 80%;
-  opacity: 0.9;
+.backgroundCanvas {
+  display: block;
+  width: 100%;
+  align-self: stretch;
   pointer-events: none;
   user-select: none;
 }
