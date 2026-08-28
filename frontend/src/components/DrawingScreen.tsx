@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } fr
 import type { DrawMode } from 'shared';
 import inyaaOutline from '../assets/inyaa-outline.svg';
 import { DRAW_MODES, DRAW_MODE_COPY } from '../constants/drawModes';
+import { floodFill, type Rgba } from '../lib/paint/floodFill';
 import styles from './DrawingScreen.module.css';
 
 type DrawingScreenProps = {
@@ -14,7 +15,7 @@ type Point = {
   y: number;
 };
 
-type Tool = 'pen' | 'eraser';
+type Tool = 'pen' | 'eraser' | 'fill';
 
 type HistoryEntry = {
   imageData: ImageData;
@@ -37,6 +38,17 @@ const COLORS = [
 ] as const;
 
 const LINE_WIDTHS = [4, 8, 16, 24] as const;
+
+const toRgba = (hex: string): Rgba => {
+  const value = hex.slice(1);
+
+  return {
+    r: Number.parseInt(value.slice(0, 2), 16),
+    g: Number.parseInt(value.slice(2, 4), 16),
+    b: Number.parseInt(value.slice(4, 6), 16),
+    a: 255,
+  };
+};
 
 export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
   const backgroundCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -184,6 +196,70 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
     context.lineJoin = 'round';
   };
 
+  const fillAtPoint = (
+    context: CanvasRenderingContext2D,
+    editingCanvas: HTMLCanvasElement,
+    point: Point,
+  ) => {
+    const backgroundCanvas = backgroundCanvasRef.current;
+
+    if (backgroundCanvas === null) {
+      return;
+    }
+
+    const compositeCanvas = document.createElement('canvas');
+    compositeCanvas.width = DRAWING_WIDTH;
+    compositeCanvas.height = DRAWING_HEIGHT;
+    const compositeContext = compositeCanvas.getContext('2d');
+
+    if (compositeContext === null) {
+      return;
+    }
+
+    compositeContext.drawImage(backgroundCanvas, 0, 0);
+    compositeContext.drawImage(editingCanvas, 0, 0);
+
+    const compositeImageData = compositeContext.getImageData(0, 0, DRAWING_WIDTH, DRAWING_HEIGHT);
+    const originalCompositeData = new Uint8ClampedArray(compositeImageData.data);
+    const fillColor = toRgba(color);
+    const result = floodFill(
+      compositeImageData.data,
+      DRAWING_WIDTH,
+      DRAWING_HEIGHT,
+      point.x,
+      point.y,
+      fillColor,
+    );
+
+    if (result.aborted || result.filledPixels === 0) {
+      return;
+    }
+
+    const editingImageData = context.getImageData(0, 0, DRAWING_WIDTH, DRAWING_HEIGHT);
+
+    for (let offset = 0; offset < compositeImageData.data.length; offset += 4) {
+      if (
+        originalCompositeData[offset] === compositeImageData.data[offset] &&
+        originalCompositeData[offset + 1] === compositeImageData.data[offset + 1] &&
+        originalCompositeData[offset + 2] === compositeImageData.data[offset + 2] &&
+        originalCompositeData[offset + 3] === compositeImageData.data[offset + 3]
+      ) {
+        continue;
+      }
+
+      editingImageData.data[offset] = fillColor.r;
+      editingImageData.data[offset + 1] = fillColor.g;
+      editingImageData.data[offset + 2] = fillColor.b;
+      editingImageData.data[offset + 3] = fillColor.a;
+    }
+
+    saveHistory(context);
+    context.globalCompositeOperation = 'source-over';
+    context.putImageData(editingImageData, 0, 0);
+    hasDrawing.current = true;
+    setCanClear(true);
+  };
+
   const handlePointerDown = (event: PointerEvent<HTMLCanvasElement>) => {
     if (
       !isReadyToDraw.current ||
@@ -201,8 +277,14 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
     }
 
     event.preventDefault();
-    saveHistory(context);
     const point = getPoint(event);
+
+    if (tool === 'fill') {
+      fillAtPoint(context, event.currentTarget, point);
+      return;
+    }
+
+    saveHistory(context);
 
     activePointerId.current = event.pointerId;
     previousPoint.current = point;
@@ -337,6 +419,14 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
             onClick={() => setTool('eraser')}
           >
             けしゴム
+          </button>
+          <button
+            type="button"
+            className={styles.toolButton}
+            aria-pressed={tool === 'fill'}
+            onClick={() => setTool('fill')}
+          >
+            ぬりつぶし
           </button>
         </div>
 
