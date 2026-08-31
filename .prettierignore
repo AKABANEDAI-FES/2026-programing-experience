@@ -6,3 +6,4 @@ package-lock.json
 *.svg
 *.png
 *.ico
+worker-configuration.d.ts
