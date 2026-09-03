@@ -3,6 +3,7 @@ import type { DrawMode } from 'shared';
 import inyaaOutline from '../assets/inyaa-outline.svg';
 import { DRAW_MODES, DRAW_MODE_COPY } from '../constants/drawModes';
 import { applyFillToEditingLayer } from '../lib/paint/applyFillToEditingLayer';
+import { createChangedPixelMask } from '../lib/paint/createChangedPixelMask';
 import { floodFill, type Rgba } from '../lib/paint/floodFill';
 import styles from './DrawingScreen.module.css';
 
@@ -23,9 +24,17 @@ type HistoryEntry = {
   hasDrawing: boolean;
 };
 
+type FillFeedback = {
+  id: number;
+  message: string;
+};
+
 const DRAWING_WIDTH = 1000;
 const DRAWING_HEIGHT = 600;
 const MAX_HISTORY_ENTRIES = 10;
+const UNFILLABLE_MESSAGE = 'この範囲は塗りつぶせないよ。線で囲んでみよう！';
+const FILL_ERROR_MESSAGE = 'うまく塗りつぶせなかったよ。もう一度試してね。';
+const HIGHLIGHT_COLOR: Rgba = { r: 239, g: 68, b: 68, a: 104 };
 
 const COLORS = [
   { value: '#1f2937', label: 'くろ' },
@@ -54,16 +63,19 @@ const toRgba = (hex: string): Rgba => {
 export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
   const backgroundCanvasRef = useRef<HTMLCanvasElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const highlightCanvasRef = useRef<HTMLCanvasElement>(null);
   const activePointerId = useRef<number | null>(null);
   const previousPoint = useRef<Point | null>(null);
   const isReadyToDraw = useRef(false);
   const hasDrawing = useRef(false);
   const history = useRef<HistoryEntry[]>([]);
+  const nextFillFeedbackId = useRef(0);
   const [tool, setTool] = useState<Tool>('pen');
   const [color, setColor] = useState<string>(COLORS[0].value);
   const [lineWidth, setLineWidth] = useState<number>(LINE_WIDTHS[1]);
   const [canUndo, setCanUndo] = useState(false);
   const [canClear, setCanClear] = useState(false);
+  const [fillFeedback, setFillFeedback] = useState<FillFeedback | null>(null);
   const copy = DRAW_MODE_COPY[mode];
 
   const cancelActiveStroke = () => {
@@ -90,6 +102,42 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
 
     history.current.push(entry);
     setCanUndo(true);
+  };
+
+  const clearFillFeedback = () => {
+    const highlightContext = highlightCanvasRef.current?.getContext('2d');
+
+    highlightContext?.clearRect(0, 0, DRAWING_WIDTH, DRAWING_HEIGHT);
+    setFillFeedback(null);
+  };
+
+  const showFillFeedback = (message: string, mask?: Uint8Array) => {
+    const highlightContext = highlightCanvasRef.current?.getContext('2d');
+
+    if (highlightContext !== null && highlightContext !== undefined) {
+      highlightContext.clearRect(0, 0, DRAWING_WIDTH, DRAWING_HEIGHT);
+
+      if (mask?.length === DRAWING_WIDTH * DRAWING_HEIGHT) {
+        const highlightImageData = highlightContext.createImageData(DRAWING_WIDTH, DRAWING_HEIGHT);
+
+        for (let pixelIndex = 0; pixelIndex < mask.length; pixelIndex += 1) {
+          if (mask[pixelIndex] === 0) {
+            continue;
+          }
+
+          const offset = pixelIndex * 4;
+          highlightImageData.data[offset] = HIGHLIGHT_COLOR.r;
+          highlightImageData.data[offset + 1] = HIGHLIGHT_COLOR.g;
+          highlightImageData.data[offset + 2] = HIGHLIGHT_COLOR.b;
+          highlightImageData.data[offset + 3] = HIGHLIGHT_COLOR.a;
+        }
+
+        highlightContext.putImageData(highlightImageData, 0, 0);
+      }
+    }
+
+    nextFillFeedbackId.current += 1;
+    setFillFeedback({ id: nextFillFeedbackId.current, message });
   };
 
   useEffect(() => {
@@ -221,26 +269,24 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
       fillColor,
     );
 
-    // Canvas端へつながる領域は背景とみなし、閉じた領域だけを塗り潰す。
-    if (result.aborted || result.touchesEdge || result.filledPixels === 0) {
+    if (result.aborted) {
+      showFillFeedback(FILL_ERROR_MESSAGE);
+      return;
+    }
+
+    if (result.filledPixels === 0) {
+      return;
+    }
+
+    const filledMask = createChangedPixelMask(originalCompositeData, compositeImageData.data);
+
+    // Canvas端へつながる領域は背景とみなし、塗らずに対象範囲を案内する。
+    if (result.touchesEdge) {
+      showFillFeedback(UNFILLABLE_MESSAGE, filledMask);
       return;
     }
 
     const editingImageData = context.getImageData(0, 0, DRAWING_WIDTH, DRAWING_HEIGHT);
-    const filledMask = new Uint8Array(DRAWING_WIDTH * DRAWING_HEIGHT);
-
-    for (let offset = 0; offset < compositeImageData.data.length; offset += 4) {
-      if (
-        originalCompositeData[offset] === compositeImageData.data[offset] &&
-        originalCompositeData[offset + 1] === compositeImageData.data[offset + 1] &&
-        originalCompositeData[offset + 2] === compositeImageData.data[offset + 2] &&
-        originalCompositeData[offset + 3] === compositeImageData.data[offset + 3]
-      ) {
-        continue;
-      }
-
-      filledMask[offset / 4] = 1;
-    }
 
     applyFillToEditingLayer(
       editingImageData.data,
@@ -275,9 +321,15 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
 
     event.preventDefault();
     const point = getPoint(event);
+    clearFillFeedback();
 
     if (tool === 'fill') {
-      fillAtPoint(context, event.currentTarget, point);
+      try {
+        fillAtPoint(context, event.currentTarget, point);
+      } catch (error) {
+        console.error('塗りつぶし処理に失敗しました', error);
+        showFillFeedback(FILL_ERROR_MESSAGE);
+      }
       return;
     }
 
@@ -334,6 +386,7 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
       return;
     }
 
+    clearFillFeedback();
     context.globalCompositeOperation = 'source-over';
     context.putImageData(previousState.imageData, 0, 0);
     hasDrawing.current = previousState.hasDrawing;
@@ -353,6 +406,7 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
     }
 
     cancelActiveStroke();
+    clearFillFeedback();
     saveHistory(context);
     context.clearRect(0, 0, DRAWING_WIDTH, DRAWING_HEIGHT);
     hasDrawing.current = false;
@@ -365,6 +419,7 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
     }
 
     cancelActiveStroke();
+    clearFillFeedback();
     onModeChange(nextMode);
   };
 
@@ -486,6 +541,18 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
           onPointerUp={finishStroke}
           onPointerCancel={finishStroke}
         />
+        <canvas
+          ref={highlightCanvasRef}
+          className={styles.highlightCanvas}
+          width={DRAWING_WIDTH}
+          height={DRAWING_HEIGHT}
+          aria-hidden="true"
+        />
+        {fillFeedback !== null && (
+          <div key={fillFeedback.id} className={styles.fillToast} role="status" aria-live="polite">
+            {fillFeedback.message}
+          </div>
+        )}
         <p id="drawing-instructions" className={styles.drawingHint}>
           {copy.drawingHint}
         </p>

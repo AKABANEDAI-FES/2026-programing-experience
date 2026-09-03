@@ -164,7 +164,8 @@
 }
 
 .backgroundCanvas,
-.canvas {
+.canvas,
+.highlightCanvas {
   grid-area: 1 / 1;
   display: block;
   width: 100%;
@@ -184,8 +185,45 @@
   touch-action: none;
 }
 
-.drawingHint {
+.highlightCanvas {
   z-index: 2;
+  pointer-events: none;
+}
+
+.fillToast {
+  grid-area: 1 / 1;
+  z-index: 4;
+  align-self: start;
+  justify-self: center;
+  max-width: calc(100% - 32px);
+  margin: 16px;
+  padding: 12px 20px;
+  border: 2px solid #ef4444;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 6px 20px rgb(127 29 29 / 24%);
+  color: #991b1b;
+  font-weight: 700;
+  pointer-events: none;
+  text-align: center;
+  animation: fill-toast-in 160ms ease-out;
+}
+
+@keyframes fill-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.drawingHint {
+  grid-area: 1 / 1;
+  z-index: 3;
   margin: 0;
   align-self: end;
   padding: 12px 18px;
@@ -194,6 +232,12 @@
   box-shadow: 0 2px 10px rgb(20 32 29 / 10%);
   pointer-events: none;
   text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fillToast {
+    animation: none;
+  }
 }
 
 @media (max-width: 640px) {
