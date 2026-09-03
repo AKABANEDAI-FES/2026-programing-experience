@@ -35,3 +35,6 @@ jobs:
 
       - name: Type check (frontend)
         run: npx tsc -b frontend
+
+      - name: Test (frontend)
+        run: npm run test --workspace=frontend
