@@ -79,6 +79,29 @@
   border-radius: 12px;
 }
 
+.backButton {
+  align-self: flex-start;
+  min-width: 160px;
+  min-height: 48px;
+  padding: 10px 20px;
+  border: 1px solid #9db4ad;
+  border-radius: 12px;
+  background: #fff;
+  color: #26413a;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.backButton:hover {
+  background: #eef6f3;
+}
+
+.backButton:focus-visible {
+  outline: 3px solid #176451;
+  outline-offset: 2px;
+}
+
 @media (max-width: 760px) {
   .screen {
     padding: 24px 16px;

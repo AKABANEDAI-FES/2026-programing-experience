@@ -2,9 +2,10 @@ import styles from './ProgrammingScreen.module.css';
 
 type ProgrammingScreenProps = {
   imageData: string;
+  onBack: () => void;
 };
 
-export function ProgrammingScreen({ imageData }: ProgrammingScreenProps) {
+export function ProgrammingScreen({ imageData, onBack }: ProgrammingScreenProps) {
   return (
     <section className={styles.screen} aria-labelledby="programming-title">
       <div className={styles.header}>
@@ -23,6 +24,10 @@ export function ProgrammingScreen({ imageData }: ProgrammingScreenProps) {
           <p>ここにスクラッチ用のエディタを実装</p>
         </div>
       </div>
+
+      <button type="button" className={styles.backButton} onClick={onBack}>
+        お絵かきに戻る
+      </button>
     </section>
   );
 }

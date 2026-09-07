@@ -27,6 +27,10 @@ function App() {
     setStep('programming');
   };
 
+  const handleBackToDrawing = () => {
+    setStep('drawing');
+  };
+
   return (
     <main className={styles.app}>
       {step === 'home' || drawMode === null ? (
@@ -39,7 +43,7 @@ function App() {
           onDrawingComplete={handleDrawingComplete}
         />
       ) : imageData !== null ? (
-        <ProgrammingScreen imageData={imageData} />
+        <ProgrammingScreen imageData={imageData} onBack={handleBackToDrawing} />
       ) : (
         <HomeScreen onSelectMode={handleSelectMode} />
       )}
