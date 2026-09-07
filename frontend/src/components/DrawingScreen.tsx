@@ -53,16 +53,10 @@ const COLORS = [
 const LINE_WIDTHS = [4, 8, 16, 24] as const;
 
 const getBackgroundSource = (mode: DrawMode): BackgroundSource =>
-  mode === 'free'
-    ? { id: 'blank', src: null }
-    : { id: 'inya-outline', src: inyaaOutline };
+  mode === 'free' ? { id: 'blank', src: null } : { id: 'inya-outline', src: inyaaOutline };
 
 const cloneImageData = (imageData: ImageData): ImageData =>
-  new ImageData(
-    new Uint8ClampedArray(imageData.data),
-    imageData.width,
-    imageData.height,
-  );
+  new ImageData(new Uint8ClampedArray(imageData.data), imageData.width, imageData.height);
 
 const cloneHistory = (historyEntries: DrawingHistoryEntry[]): DrawingHistoryEntry[] =>
   historyEntries.map((entry) => ({
@@ -527,12 +521,7 @@ export function DrawingScreen({
     const drawingCache: DrawingCache = {
       mode,
       backgroundSource: getBackgroundSource(mode),
-      backgroundImageData: backgroundContext.getImageData(
-        0,
-        0,
-        DRAWING_WIDTH,
-        DRAWING_HEIGHT,
-      ),
+      backgroundImageData: backgroundContext.getImageData(0, 0, DRAWING_WIDTH, DRAWING_HEIGHT),
       editingImageData: editingContext.getImageData(0, 0, DRAWING_WIDTH, DRAWING_HEIGHT),
       history: cloneHistory(history.current),
       hasDrawing: hasDrawing.current,
