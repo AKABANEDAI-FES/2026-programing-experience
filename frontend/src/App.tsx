@@ -18,12 +18,21 @@ function App() {
     setStep('drawing');
   };
 
+  const handleDrawingComplete = (nextImageData: string) => {
+    setImageData(nextImageData);
+    setStep('programming');
+  };
+
   return (
     <main className={styles.app}>
       {step === 'home' || drawMode === null ? (
         <HomeScreen onSelectMode={handleSelectMode} />
       ) : step === 'drawing' ? (
-        <DrawingScreen mode={drawMode} onModeChange={setDrawMode} />
+        <DrawingScreen
+          mode={drawMode}
+          onModeChange={setDrawMode}
+          onNext={handleDrawingComplete}
+        />
       ) : imageData !== null ? (
         <ProgrammingScreen imageData={imageData} />
       ) : (

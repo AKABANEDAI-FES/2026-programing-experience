@@ -10,6 +10,7 @@ import styles from './DrawingScreen.module.css';
 type DrawingScreenProps = {
   mode: DrawMode;
   onModeChange: (mode: DrawMode) => void;
+  onNext: (imageData: string) => void;
 };
 
 type Point = {
@@ -60,7 +61,7 @@ const toRgba = (hex: string): Rgba => {
   };
 };
 
-export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
+export function DrawingScreen({ mode, onModeChange, onNext }: DrawingScreenProps) {
   const backgroundCanvasRef = useRef<HTMLCanvasElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const highlightCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -423,6 +424,28 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
     onModeChange(nextMode);
   };
 
+  const handleNext = () => {
+    const backgroundCanvas = backgroundCanvasRef.current;
+    const editingCanvas = canvasRef.current;
+
+    if (backgroundCanvas === null || editingCanvas === null) {
+      return;
+    }
+
+    const compositeCanvas = document.createElement('canvas');
+    compositeCanvas.width = DRAWING_WIDTH;
+    compositeCanvas.height = DRAWING_HEIGHT;
+    const compositeContext = compositeCanvas.getContext('2d');
+
+    if (compositeContext === null) {
+      return;
+    }
+
+    compositeContext.drawImage(backgroundCanvas, 0, 0);
+    compositeContext.drawImage(editingCanvas, 0, 0);
+    onNext(compositeCanvas.toDataURL('image/png'));
+  };
+
   return (
     <section className={styles.screen} aria-labelledby="drawing-title">
       <div className={styles.header}>
@@ -557,6 +580,9 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
           {copy.drawingHint}
         </p>
       </div>
+      <button type="button" className={styles.nextButton} onClick={handleNext}>
+        次へ
+      </button>
     </section>
   );
 }
