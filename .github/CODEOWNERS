@@ -1,0 +1,20 @@
+# CODEOWNERS
+# ここに書かれたパスを変更するPRには、該当する人が自動でレビュアーに追加されます。
+# 詳細: https://docs.github.com/ja/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# デフォルト（下記のどのルールにも一致しないパス）は指定なし
+
+# frontend チーム
+/frontend/   @harumaki1220 @miyatarutyyy @1F10260080
+
+# backend チーム
+/backend/    @kuribottigs @nanasi725 @s1f102602037
+
+# フロント・バックエンド共有の型定義
+/shared/            @harumaki1220
+
+# CI・GitHub設定
+/.github/           @harumaki1220
+
+# 依存関係の追加・変更
+package.json        @harumaki1220
