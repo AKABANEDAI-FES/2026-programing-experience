@@ -5,12 +5,19 @@ import { DRAW_MODES, DRAW_MODE_COPY } from '../constants/drawModes';
 import { applyFillToEditingLayer } from '../lib/paint/applyFillToEditingLayer';
 import { createChangedPixelMask } from '../lib/paint/createChangedPixelMask';
 import { floodFill, type Rgba } from '../lib/paint/floodFill';
+import type {
+  BackgroundSource,
+  DrawingCache,
+  DrawingHistoryEntry,
+  DrawingResult,
+} from '../types/drawing';
 import styles from './DrawingScreen.module.css';
 
 type DrawingScreenProps = {
   mode: DrawMode;
+  initialDrawingCache: DrawingCache | null;
   onModeChange: (mode: DrawMode) => void;
-  onDrawingComplete: (imageData: string) => void;
+  onDrawingComplete: (result: DrawingResult) => void;
 };
 
 type Point = {
@@ -19,11 +26,6 @@ type Point = {
 };
 
 type Tool = 'pen' | 'eraser' | 'fill';
-
-type HistoryEntry = {
-  imageData: ImageData;
-  hasDrawing: boolean;
-};
 
 type FillFeedback = {
   id: number;
@@ -50,6 +52,24 @@ const COLORS = [
 
 const LINE_WIDTHS = [4, 8, 16, 24] as const;
 
+const getBackgroundSource = (mode: DrawMode): BackgroundSource =>
+  mode === 'free'
+    ? { id: 'blank', src: null }
+    : { id: 'inya-outline', src: inyaaOutline };
+
+const cloneImageData = (imageData: ImageData): ImageData =>
+  new ImageData(
+    new Uint8ClampedArray(imageData.data),
+    imageData.width,
+    imageData.height,
+  );
+
+const cloneHistory = (historyEntries: DrawingHistoryEntry[]): DrawingHistoryEntry[] =>
+  historyEntries.map((entry) => ({
+    imageData: cloneImageData(entry.imageData),
+    hasDrawing: entry.hasDrawing,
+  }));
+
 const toRgba = (hex: string): Rgba => {
   const value = hex.slice(1);
 
@@ -61,15 +81,21 @@ const toRgba = (hex: string): Rgba => {
   };
 };
 
-export function DrawingScreen({ mode, onModeChange, onDrawingComplete }: DrawingScreenProps) {
+export function DrawingScreen({
+  mode,
+  initialDrawingCache,
+  onModeChange,
+  onDrawingComplete,
+}: DrawingScreenProps) {
   const backgroundCanvasRef = useRef<HTMLCanvasElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const highlightCanvasRef = useRef<HTMLCanvasElement>(null);
   const activePointerId = useRef<number | null>(null);
   const previousPoint = useRef<Point | null>(null);
   const isReadyToDraw = useRef(false);
+  const hasRestoredInitialCache = useRef(false);
   const hasDrawing = useRef(false);
-  const history = useRef<HistoryEntry[]>([]);
+  const history = useRef<DrawingHistoryEntry[]>([]);
   const nextFillFeedbackId = useRef(0);
   const [tool, setTool] = useState<Tool>('pen');
   const [color, setColor] = useState<string>(COLORS[0].value);
@@ -157,6 +183,42 @@ export function DrawingScreen({ mode, onModeChange, onDrawingComplete }: Drawing
     let isCurrent = true;
     isReadyToDraw.current = false;
     cancelActiveStroke();
+    const backgroundSource = getBackgroundSource(mode);
+    const shouldRestoreInitialCache =
+      !hasRestoredInitialCache.current && initialDrawingCache !== null;
+
+    const restoreEditingLayer = () => {
+      if (!shouldRestoreInitialCache || initialDrawingCache === null) {
+        return;
+      }
+
+      const editingContext = canvas.getContext('2d');
+      if (editingContext === null) {
+        return;
+      }
+
+      editingContext.clearRect(0, 0, DRAWING_WIDTH, DRAWING_HEIGHT);
+      editingContext.putImageData(initialDrawingCache.editingImageData, 0, 0);
+      history.current = cloneHistory(initialDrawingCache.history);
+      hasDrawing.current = initialDrawingCache.hasDrawing;
+      setCanUndo(history.current.length > 0);
+      setCanClear(initialDrawingCache.hasDrawing);
+      hasRestoredInitialCache.current = true;
+    };
+
+    const restoreCachedBackground = () => {
+      if (
+        !shouldRestoreInitialCache ||
+        initialDrawingCache?.backgroundSource.id !== backgroundSource.id ||
+        initialDrawingCache.backgroundImageData.width !== DRAWING_WIDTH ||
+        initialDrawingCache.backgroundImageData.height !== DRAWING_HEIGHT
+      ) {
+        return false;
+      }
+
+      backgroundContext.putImageData(initialDrawingCache.backgroundImageData, 0, 0);
+      return true;
+    };
 
     const resetBackground = () => {
       backgroundContext.clearRect(0, 0, DRAWING_WIDTH, DRAWING_HEIGHT);
@@ -166,7 +228,17 @@ export function DrawingScreen({ mode, onModeChange, onDrawingComplete }: Drawing
 
     resetBackground();
 
+    if (restoreCachedBackground()) {
+      restoreEditingLayer();
+      isReadyToDraw.current = true;
+      return () => {
+        isCurrent = false;
+        cancelActiveStroke();
+      };
+    }
+
     if (mode === 'free') {
+      restoreEditingLayer();
       isReadyToDraw.current = true;
       return () => {
         isCurrent = false;
@@ -194,20 +266,22 @@ export function DrawingScreen({ mode, onModeChange, onDrawingComplete }: Drawing
         width,
         height,
       );
+      restoreEditingLayer();
       isReadyToDraw.current = true;
     };
     outlineImage.onerror = () => {
       if (isCurrent) {
+        restoreEditingLayer();
         isReadyToDraw.current = true;
       }
     };
-    outlineImage.src = inyaaOutline;
+    outlineImage.src = backgroundSource.src ?? inyaaOutline;
 
     return () => {
       isCurrent = false;
       cancelActiveStroke();
     };
-  }, [mode]);
+  }, [mode, initialDrawingCache]);
 
   const getPoint = (event: PointerEvent<HTMLCanvasElement>): Point => {
     const bounds = event.currentTarget.getBoundingClientRect();
@@ -432,6 +506,13 @@ export function DrawingScreen({ mode, onModeChange, onDrawingComplete }: Drawing
       return;
     }
 
+    const backgroundContext = backgroundCanvas.getContext('2d');
+    const editingContext = editingCanvas.getContext('2d');
+
+    if (backgroundContext === null || editingContext === null) {
+      return;
+    }
+
     const compositeCanvas = document.createElement('canvas');
     compositeCanvas.width = DRAWING_WIDTH;
     compositeCanvas.height = DRAWING_HEIGHT;
@@ -443,7 +524,24 @@ export function DrawingScreen({ mode, onModeChange, onDrawingComplete }: Drawing
 
     compositeContext.drawImage(backgroundCanvas, 0, 0);
     compositeContext.drawImage(editingCanvas, 0, 0);
-    onDrawingComplete(compositeCanvas.toDataURL('image/png'));
+    const drawingCache: DrawingCache = {
+      mode,
+      backgroundSource: getBackgroundSource(mode),
+      backgroundImageData: backgroundContext.getImageData(
+        0,
+        0,
+        DRAWING_WIDTH,
+        DRAWING_HEIGHT,
+      ),
+      editingImageData: editingContext.getImageData(0, 0, DRAWING_WIDTH, DRAWING_HEIGHT),
+      history: cloneHistory(history.current),
+      hasDrawing: hasDrawing.current,
+    };
+
+    onDrawingComplete({
+      imageData: compositeCanvas.toDataURL('image/png'),
+      drawingCache,
+    });
   };
 
   return (
