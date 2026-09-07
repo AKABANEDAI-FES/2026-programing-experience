@@ -31,7 +31,7 @@ function App() {
         <DrawingScreen
           mode={drawMode}
           onModeChange={setDrawMode}
-          onNext={handleDrawingComplete}
+          onDrawingComplete={handleDrawingComplete}
         />
       ) : imageData !== null ? (
         <ProgrammingScreen imageData={imageData} />

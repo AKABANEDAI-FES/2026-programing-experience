@@ -10,7 +10,7 @@ import styles from './DrawingScreen.module.css';
 type DrawingScreenProps = {
   mode: DrawMode;
   onModeChange: (mode: DrawMode) => void;
-  onNext: (imageData: string) => void;
+  onDrawingComplete: (imageData: string) => void;
 };
 
 type Point = {
@@ -61,7 +61,7 @@ const toRgba = (hex: string): Rgba => {
   };
 };
 
-export function DrawingScreen({ mode, onModeChange, onNext }: DrawingScreenProps) {
+export function DrawingScreen({ mode, onModeChange, onDrawingComplete }: DrawingScreenProps) {
   const backgroundCanvasRef = useRef<HTMLCanvasElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const highlightCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -443,7 +443,7 @@ export function DrawingScreen({ mode, onModeChange, onNext }: DrawingScreenProps
 
     compositeContext.drawImage(backgroundCanvas, 0, 0);
     compositeContext.drawImage(editingCanvas, 0, 0);
-    onNext(compositeCanvas.toDataURL('image/png'));
+    onDrawingComplete(compositeCanvas.toDataURL('image/png'));
   };
 
   return (
