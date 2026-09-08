@@ -7,32 +7,16 @@ export interface DecodedImage {
 export type DecodeImageResult =
   { success: true; image: DecodedImage } | { success: false; message: string };
 
-const SUPPORTED_IMAGE_TYPES: Record<string, string> = {
-  'image/png': 'png',
-  'image/jpeg': 'jpg',
-  'image/svg+xml': 'svg',
-};
+const PNG_CONTENT_TYPE = 'image/png';
+const PNG_EXTENSION = 'png';
 
 const DATA_URL_PATTERN = /^data:([\w.+-]+\/[\w.+-]+);base64,([\s\S]+)$/;
 
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
-const JPEG_SIGNATURE = [0xff, 0xd8, 0xff];
+const PNG_TRAILER = [0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82];
 
-const hasSignature = (bytes: Uint8Array, signature: number[]): boolean =>
-  signature.every((byte, index) => bytes[index] === byte);
-
-const looksLikeImage = (bytes: Uint8Array, contentType: string): boolean => {
-  switch (contentType) {
-    case 'image/png':
-      return hasSignature(bytes, PNG_SIGNATURE);
-    case 'image/jpeg':
-      return hasSignature(bytes, JPEG_SIGNATURE);
-    case 'image/svg+xml':
-      return new TextDecoder().decode(bytes.slice(0, 1024)).toLowerCase().includes('<svg');
-    default:
-      return false;
-  }
-};
+const matchesBytes = (bytes: Uint8Array, expected: number[], offset: number): boolean =>
+  expected.every((byte, index) => bytes[offset + index] === byte);
 
 const base64ToBytes = (base64: string): Uint8Array | null => {
   try {
@@ -49,7 +33,11 @@ const base64ToBytes = (base64: string): Uint8Array | null => {
   }
 };
 
-export const decodeImageDataUrl = (imageBase64: string): DecodeImageResult => {
+export const decodeImageDataUrl = (imageBase64: unknown): DecodeImageResult => {
+  if (typeof imageBase64 !== 'string') {
+    return { success: false, message: '画像データが指定されていません' };
+  }
+
   const matched = imageBase64.match(DATA_URL_PATTERN);
 
   if (!matched) {
@@ -57,21 +45,30 @@ export const decodeImageDataUrl = (imageBase64: string): DecodeImageResult => {
   }
 
   const contentType = matched[1].toLowerCase();
-  const extension = SUPPORTED_IMAGE_TYPES[contentType];
 
-  if (!extension) {
+  if (contentType !== PNG_CONTENT_TYPE) {
     return { success: false, message: `対応していない画像形式です: ${contentType}` };
   }
 
   const bytes = base64ToBytes(matched[2]);
 
-  if (!bytes || bytes.length === 0) {
+  if (!bytes) {
     return { success: false, message: '画像データをデコードできませんでした' };
   }
 
-  if (!looksLikeImage(bytes, contentType)) {
-    return { success: false, message: '画像として読み込めないデータです' };
+  if (!matchesBytes(bytes, PNG_SIGNATURE, 0)) {
+    return { success: false, message: 'PNG形式の画像ではありません' };
   }
 
-  return { success: true, image: { bytes, contentType, extension } };
+  if (
+    bytes.length < PNG_SIGNATURE.length + PNG_TRAILER.length ||
+    !matchesBytes(bytes, PNG_TRAILER, bytes.length - PNG_TRAILER.length)
+  ) {
+    return { success: false, message: '画像データが途中で切れています' };
+  }
+
+  return {
+    success: true,
+    image: { bytes, contentType: PNG_CONTENT_TYPE, extension: PNG_EXTENSION },
+  };
 };

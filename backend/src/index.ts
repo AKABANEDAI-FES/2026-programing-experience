@@ -32,8 +32,8 @@ app.get('/', (c) => {
 });
 
 app.post('/api/release', async (c) => {
-  const body = await c.req.json<ReleaseRequest>();
-  const decoded = decodeImageDataUrl(body.image_base64);
+  const body = await c.req.json<Partial<ReleaseRequest>>();
+  const decoded = decodeImageDataUrl(body?.image_base64);
 
   if (!decoded.success) {
     const errorRes: ReleaseResponse = {
