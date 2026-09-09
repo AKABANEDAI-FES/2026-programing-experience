@@ -5,11 +5,13 @@ import { DRAW_MODES, DRAW_MODE_COPY } from '../constants/drawModes';
 import { applyFillToEditingLayer } from '../lib/paint/applyFillToEditingLayer';
 import { createChangedPixelMask } from '../lib/paint/createChangedPixelMask';
 import { floodFill, type Rgba } from '../lib/paint/floodFill';
+import type { DrawingHistoryEntry } from '../types/drawing';
 import styles from './DrawingScreen.module.css';
 
 type DrawingScreenProps = {
   mode: DrawMode;
   onModeChange: (mode: DrawMode) => void;
+  onDrawingComplete: (imageData: string) => void;
 };
 
 type Point = {
@@ -18,11 +20,6 @@ type Point = {
 };
 
 type Tool = 'pen' | 'eraser' | 'fill';
-
-type HistoryEntry = {
-  imageData: ImageData;
-  hasDrawing: boolean;
-};
 
 type FillFeedback = {
   id: number;
@@ -60,7 +57,7 @@ const toRgba = (hex: string): Rgba => {
   };
 };
 
-export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
+export function DrawingScreen({ mode, onModeChange, onDrawingComplete }: DrawingScreenProps) {
   const backgroundCanvasRef = useRef<HTMLCanvasElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const highlightCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -68,7 +65,7 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
   const previousPoint = useRef<Point | null>(null);
   const isReadyToDraw = useRef(false);
   const hasDrawing = useRef(false);
-  const history = useRef<HistoryEntry[]>([]);
+  const history = useRef<DrawingHistoryEntry[]>([]);
   const nextFillFeedbackId = useRef(0);
   const [tool, setTool] = useState<Tool>('pen');
   const [color, setColor] = useState<string>(COLORS[0].value);
@@ -423,6 +420,28 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
     onModeChange(nextMode);
   };
 
+  const handleNext = () => {
+    const backgroundCanvas = backgroundCanvasRef.current;
+    const editingCanvas = canvasRef.current;
+
+    if (backgroundCanvas === null || editingCanvas === null) {
+      return;
+    }
+
+    const compositeCanvas = document.createElement('canvas');
+    compositeCanvas.width = DRAWING_WIDTH;
+    compositeCanvas.height = DRAWING_HEIGHT;
+    const compositeContext = compositeCanvas.getContext('2d');
+
+    if (compositeContext === null) {
+      return;
+    }
+
+    compositeContext.drawImage(backgroundCanvas, 0, 0);
+    compositeContext.drawImage(editingCanvas, 0, 0);
+    onDrawingComplete(compositeCanvas.toDataURL('image/png'));
+  };
+
   return (
     <section className={styles.screen} aria-labelledby="drawing-title">
       <div className={styles.header}>
@@ -557,6 +576,9 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
           {copy.drawingHint}
         </p>
       </div>
+      <button type="button" className={styles.nextButton} onClick={handleNext}>
+        次へ
+      </button>
     </section>
   );
 }
