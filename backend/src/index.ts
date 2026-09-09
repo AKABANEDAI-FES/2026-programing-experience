@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { ReleaseRequest, ReleaseResponse } from 'shared';
+import { decodeImageDataUrl } from './lib/image';
 
 type Bindings = {
   ALLOWED_ORIGINS?: string;
@@ -31,7 +32,17 @@ app.get('/', (c) => {
 });
 
 app.post('/api/release', async (c) => {
-  await c.req.json<ReleaseRequest>();
+  const body = await c.req.json<Partial<ReleaseRequest>>();
+  const decoded = decodeImageDataUrl(body?.image_base64);
+
+  if (!decoded.success) {
+    const errorRes: ReleaseResponse = {
+      success: false,
+      message: decoded.message,
+    };
+
+    return c.json(errorRes, 400);
+  }
 
   const res: ReleaseResponse = {
     success: true,
