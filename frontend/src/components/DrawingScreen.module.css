@@ -190,7 +190,8 @@
 }
 
 .penCursor,
-.eraserCursor {
+.eraserCursor,
+.fillCursor {
   position: absolute;
   z-index: 2;
   min-width: 2px;
@@ -208,6 +209,12 @@
 .eraserCursor {
   border: 2px dashed #6b7c77;
   background: rgb(255 255 255 / 55%);
+}
+
+.fillCursor {
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgb(20 32 29 / 35%);
+  background: var(--cursor-color);
 }
 
 .highlightCanvas {

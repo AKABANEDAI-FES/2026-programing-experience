@@ -41,6 +41,7 @@ const MAX_HISTORY_ENTRIES = 10;
 const UNFILLABLE_MESSAGE = 'この範囲は塗りつぶせないよ。線で囲んでみよう！';
 const FILL_ERROR_MESSAGE = 'うまく塗りつぶせなかったよ。もう一度試してね。';
 const HIGHLIGHT_COLOR: Rgba = { r: 239, g: 68, b: 68, a: 104 };
+const FILL_CURSOR_DIAMETER = 18;
 
 const COLORS = [
   { value: '#1f2937', label: 'くろ' },
@@ -227,18 +228,13 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
   };
 
   const updateCursorIndicator = (event: PointerEvent<HTMLCanvasElement>) => {
-    if (tool === 'fill') {
-      setCursorIndicator(null);
-      return;
-    }
-
     const bounds = event.currentTarget.getBoundingClientRect();
     const scale = bounds.width / DRAWING_WIDTH;
 
     setCursorIndicator({
       leftPercent: ((event.clientX - bounds.left) / bounds.width) * 100,
       topPercent: ((event.clientY - bounds.top) / bounds.height) * 100,
-      diameter: lineWidth * scale,
+      diameter: tool === 'fill' ? FILL_CURSOR_DIAMETER : lineWidth * scale,
     });
   };
 
@@ -556,7 +552,7 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
         />
         <canvas
           ref={canvasRef}
-          className={tool === 'fill' ? styles.canvas : `${styles.canvas} ${styles.canvasNoCursor}`}
+          className={`${styles.canvas} ${styles.canvasNoCursor}`}
           width={DRAWING_WIDTH}
           height={DRAWING_HEIGHT}
           role="img"
@@ -578,7 +574,13 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
         />
         {cursorIndicator !== null && (
           <div
-            className={tool === 'eraser' ? styles.eraserCursor : styles.penCursor}
+            className={
+              tool === 'eraser'
+                ? styles.eraserCursor
+                : tool === 'fill'
+                  ? styles.fillCursor
+                  : styles.penCursor
+            }
             style={
               {
                 left: `${cursorIndicator.leftPercent}%`,
