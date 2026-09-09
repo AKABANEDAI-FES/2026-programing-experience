@@ -29,6 +29,12 @@ type FillFeedback = {
   message: string;
 };
 
+type CursorIndicator = {
+  leftPercent: number;
+  topPercent: number;
+  diameter: number;
+};
+
 const DRAWING_WIDTH = 1000;
 const DRAWING_HEIGHT = 600;
 const MAX_HISTORY_ENTRIES = 10;
@@ -76,6 +82,7 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
   const [canUndo, setCanUndo] = useState(false);
   const [canClear, setCanClear] = useState(false);
   const [fillFeedback, setFillFeedback] = useState<FillFeedback | null>(null);
+  const [cursorIndicator, setCursorIndicator] = useState<CursorIndicator | null>(null);
   const copy = DRAW_MODE_COPY[mode];
 
   const cancelActiveStroke = () => {
@@ -219,6 +226,22 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
     };
   };
 
+  const updateCursorIndicator = (event: PointerEvent<HTMLCanvasElement>) => {
+    if (tool === 'fill') {
+      setCursorIndicator(null);
+      return;
+    }
+
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const scale = bounds.width / DRAWING_WIDTH;
+
+    setCursorIndicator({
+      leftPercent: ((event.clientX - bounds.left) / bounds.width) * 100,
+      topPercent: ((event.clientY - bounds.top) / bounds.height) * 100,
+      diameter: lineWidth * scale,
+    });
+  };
+
   const drawDot = (context: CanvasRenderingContext2D, point: Point) => {
     context.beginPath();
     context.arc(point.x, point.y, lineWidth / 2, 0, Math.PI * 2);
@@ -321,6 +344,7 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
 
     event.preventDefault();
     const point = getPoint(event);
+    updateCursorIndicator(event);
     clearFillFeedback();
 
     if (tool === 'fill') {
@@ -345,6 +369,8 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
   };
 
   const handlePointerMove = (event: PointerEvent<HTMLCanvasElement>) => {
+    updateCursorIndicator(event);
+
     if (activePointerId.current !== event.pointerId || previousPoint.current === null) {
       return;
     }
@@ -530,7 +556,7 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
         />
         <canvas
           ref={canvasRef}
-          className={styles.canvas}
+          className={tool === 'fill' ? styles.canvas : `${styles.canvas} ${styles.canvasNoCursor}`}
           width={DRAWING_WIDTH}
           height={DRAWING_HEIGHT}
           role="img"
@@ -538,6 +564,8 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
           aria-describedby="drawing-instructions"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
+          onPointerEnter={updateCursorIndicator}
+          onPointerLeave={() => setCursorIndicator(null)}
           onPointerUp={finishStroke}
           onPointerCancel={finishStroke}
         />
@@ -548,6 +576,21 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
           height={DRAWING_HEIGHT}
           aria-hidden="true"
         />
+        {cursorIndicator !== null && (
+          <div
+            className={tool === 'eraser' ? styles.eraserCursor : styles.penCursor}
+            style={
+              {
+                left: `${cursorIndicator.leftPercent}%`,
+                top: `${cursorIndicator.topPercent}%`,
+                width: `${cursorIndicator.diameter}px`,
+                height: `${cursorIndicator.diameter}px`,
+                '--cursor-color': color,
+              } as CSSProperties
+            }
+            aria-hidden="true"
+          />
+        )}
         {fillFeedback !== null && (
           <div key={fillFeedback.id} className={styles.fillToast} role="status" aria-live="polite">
             {fillFeedback.message}

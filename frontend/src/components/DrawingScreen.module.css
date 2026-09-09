@@ -185,6 +185,31 @@
   touch-action: none;
 }
 
+.canvasNoCursor {
+  cursor: none;
+}
+
+.penCursor,
+.eraserCursor {
+  position: absolute;
+  z-index: 2;
+  min-width: 2px;
+  min-height: 2px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.penCursor {
+  border: 2px solid var(--cursor-color);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 80%);
+}
+
+.eraserCursor {
+  border: 2px dashed #6b7c77;
+  background: rgb(255 255 255 / 55%);
+}
+
 .highlightCanvas {
   z-index: 2;
   pointer-events: none;
