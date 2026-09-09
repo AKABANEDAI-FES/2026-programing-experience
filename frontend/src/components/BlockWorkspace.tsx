@@ -82,5 +82,11 @@ export function BlockWorkspace({ onWorkspaceChange }: BlockWorkspaceProps) {
     };
   }, []);
 
-  return <div ref={containerRef} className={styles.workspace} aria-label="ブロックプログラミングのワークスペース" />;
+  return (
+    <div
+      ref={containerRef}
+      className={styles.workspace}
+      aria-label="ブロックプログラミングのワークスペース"
+    />
+  );
 }
