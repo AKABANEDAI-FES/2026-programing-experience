@@ -57,11 +57,7 @@ const toRgba = (hex: string): Rgba => {
   };
 };
 
-export function DrawingScreen({
-  mode,
-  onModeChange,
-  onDrawingComplete,
-}: DrawingScreenProps) {
+export function DrawingScreen({ mode, onModeChange, onDrawingComplete }: DrawingScreenProps) {
   const backgroundCanvasRef = useRef<HTMLCanvasElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const highlightCanvasRef = useRef<HTMLCanvasElement>(null);

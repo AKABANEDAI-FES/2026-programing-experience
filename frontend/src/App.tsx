@@ -45,11 +45,7 @@ function App() {
     return <ProgrammingScreen imageData={imageData} />;
   };
 
-  return (
-    <main className={styles.app}>
-      {renderCurrentScreen()}
-    </main>
-  );
+  return <main className={styles.app}>{renderCurrentScreen()}</main>;
 }
 
 export default App;
