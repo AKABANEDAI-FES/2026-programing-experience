@@ -5,7 +5,7 @@ import prettier from 'eslint-config-prettier';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
 export default defineConfig([
-  globalIgnores(['dist', '.wrangler']),
+  globalIgnores(['dist', '.wrangler', 'worker-configuration.d.ts']),
   {
     files: ['**/*.ts'],
     extends: [js.configs.recommended, tseslint.configs.recommended, prettier],
