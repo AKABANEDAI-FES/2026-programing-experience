@@ -73,6 +73,7 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
   const highlightCanvasRef = useRef<HTMLCanvasElement>(null);
   const activePointerId = useRef<number | null>(null);
   const previousPoint = useRef<Point | null>(null);
+  const lastPointerClient = useRef<{ clientX: number; clientY: number } | null>(null);
   const isReadyToDraw = useRef(false);
   const hasDrawing = useRef(false);
   const history = useRef<HistoryEntry[]>([]);
@@ -227,16 +228,35 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
     };
   };
 
-  const updateCursorIndicator = (event: PointerEvent<HTMLCanvasElement>) => {
-    const bounds = event.currentTarget.getBoundingClientRect();
+  const updateCursorIndicatorAt = (canvas: HTMLCanvasElement, clientX: number, clientY: number) => {
+    const bounds = canvas.getBoundingClientRect();
     const scale = bounds.width / DRAWING_WIDTH;
 
     setCursorIndicator({
-      leftPercent: ((event.clientX - bounds.left) / bounds.width) * 100,
-      topPercent: ((event.clientY - bounds.top) / bounds.height) * 100,
+      leftPercent: ((clientX - bounds.left) / bounds.width) * 100,
+      topPercent: ((clientY - bounds.top) / bounds.height) * 100,
       diameter: tool === 'fill' ? FILL_CURSOR_DIAMETER : lineWidth * scale,
     });
   };
+
+  const updateCursorIndicator = (event: PointerEvent<HTMLCanvasElement>) => {
+    lastPointerClient.current = { clientX: event.clientX, clientY: event.clientY };
+    updateCursorIndicatorAt(event.currentTarget, event.clientX, event.clientY);
+  };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+
+    if (canvas === null || lastPointerClient.current === null) {
+      return;
+    }
+
+    updateCursorIndicatorAt(
+      canvas,
+      lastPointerClient.current.clientX,
+      lastPointerClient.current.clientY,
+    );
+  }, [tool, lineWidth]);
 
   const drawDot = (context: CanvasRenderingContext2D, point: Point) => {
     context.beginPath();
@@ -572,27 +592,28 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
           height={DRAWING_HEIGHT}
           aria-hidden="true"
         />
-        {cursorIndicator !== null && (
-          <div
-            className={
-              tool === 'eraser'
-                ? styles.eraserCursor
-                : tool === 'fill'
-                  ? styles.fillCursor
-                  : styles.penCursor
-            }
-            style={
-              {
-                left: `${cursorIndicator.leftPercent}%`,
-                top: `${cursorIndicator.topPercent}%`,
-                width: `${cursorIndicator.diameter}px`,
-                height: `${cursorIndicator.diameter}px`,
-                '--cursor-color': color,
-              } as CSSProperties
-            }
-            aria-hidden="true"
-          />
-        )}
+        <div className={styles.cursorLayer} aria-hidden="true">
+          {cursorIndicator !== null && (
+            <div
+              className={
+                tool === 'eraser'
+                  ? styles.eraserCursor
+                  : tool === 'fill'
+                    ? styles.fillCursor
+                    : styles.penCursor
+              }
+              style={
+                {
+                  left: `${cursorIndicator.leftPercent}%`,
+                  top: `${cursorIndicator.topPercent}%`,
+                  width: `${cursorIndicator.diameter}px`,
+                  height: `${cursorIndicator.diameter}px`,
+                  '--cursor-color': color,
+                } as CSSProperties
+              }
+            />
+          )}
+        </div>
         {fillFeedback !== null && (
           <div key={fillFeedback.id} className={styles.fillToast} role="status" aria-live="polite">
             {fillFeedback.message}
