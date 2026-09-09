@@ -23,21 +23,31 @@ function App() {
     setStep('programming');
   };
 
-  return (
-    <main className={styles.app}>
-      {step === 'home' || drawMode === null ? (
-        <HomeScreen onSelectMode={handleSelectMode} />
-      ) : step === 'drawing' ? (
+  const renderCurrentScreen = () => {
+    if (step === 'home' || drawMode === null) {
+      return <HomeScreen onSelectMode={handleSelectMode} />;
+    }
+
+    if (step === 'drawing') {
+      return (
         <DrawingScreen
           mode={drawMode}
           onModeChange={setDrawMode}
           onDrawingComplete={handleDrawingComplete}
         />
-      ) : imageData !== null ? (
-        <ProgrammingScreen imageData={imageData} />
-      ) : (
-        <HomeScreen onSelectMode={handleSelectMode} />
-      )}
+      );
+    }
+
+    if (imageData === null) {
+      return <HomeScreen onSelectMode={handleSelectMode} />;
+    }
+
+    return <ProgrammingScreen imageData={imageData} />;
+  };
+
+  return (
+    <main className={styles.app}>
+      {renderCurrentScreen()}
     </main>
   );
 }
