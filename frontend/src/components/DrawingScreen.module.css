@@ -185,6 +185,48 @@
   touch-action: none;
 }
 
+.canvasNoCursor {
+  cursor: none;
+}
+
+.cursorLayer {
+  grid-area: 1 / 1;
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 5 / 3;
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.penCursor,
+.eraserCursor,
+.fillCursor {
+  position: absolute;
+  min-width: 2px;
+  min-height: 2px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.penCursor {
+  border: 2px solid var(--cursor-color);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 80%);
+}
+
+.eraserCursor {
+  border: 2px dashed #6b7c77;
+  background: rgb(255 255 255 / 55%);
+}
+
+.fillCursor {
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgb(20 32 29 / 35%);
+  background: var(--cursor-color);
+}
+
 .highlightCanvas {
   z-index: 2;
   pointer-events: none;
