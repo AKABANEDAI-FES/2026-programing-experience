@@ -42,7 +42,7 @@
 }
 
 .stage,
-.editorPlaceholder {
+.editorContainer {
   border: 2px solid #aebfba;
   border-radius: 16px;
   background: #fff;
@@ -63,20 +63,8 @@
   object-fit: contain;
 }
 
-.editorPlaceholder {
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  box-sizing: border-box;
-  color: #52635f;
-  text-align: center;
-}
-
-.editorPlaceholder p {
-  margin: 0;
-  padding: 24px;
-  border: 1px dashed #9db4ad;
-  border-radius: 12px;
+.editorContainer {
+  overflow: hidden;
 }
 
 @media (max-width: 760px) {
