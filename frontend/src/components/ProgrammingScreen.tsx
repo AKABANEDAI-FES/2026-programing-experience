@@ -1,3 +1,5 @@
+import { useCallback, useRef } from 'react';
+import { BlockWorkspace } from './BlockWorkspace';
 import styles from './ProgrammingScreen.module.css';
 
 type ProgrammingScreenProps = {
@@ -5,6 +7,12 @@ type ProgrammingScreenProps = {
 };
 
 export function ProgrammingScreen({ imageData }: ProgrammingScreenProps) {
+  const workspaceJsonRef = useRef<Record<string, unknown>>({});
+
+  const handleWorkspaceChange = useCallback((json: Record<string, unknown>) => {
+    workspaceJsonRef.current = json;
+  }, []);
+
   return (
     <section className={styles.screen} aria-labelledby="programming-title">
       <div className={styles.header}>
@@ -19,8 +27,8 @@ export function ProgrammingScreen({ imageData }: ProgrammingScreenProps) {
         <div className={styles.stage} aria-label="プログラミング対象の画像">
           <img className={styles.targetImage} src={imageData} alt="プログラミング対象の作品" />
         </div>
-        <div className={styles.editorPlaceholder}>
-          <p>ここにスクラッチ用のエディタを実装</p>
+        <div className={styles.editorContainer}>
+          <BlockWorkspace onWorkspaceChange={handleWorkspaceChange} />
         </div>
       </div>
     </section>
