@@ -1,7 +1,7 @@
 import { MAX_COMMANDS, type ReleaseRequest } from 'shared';
 
 const PNG_DATA_URL_PATTERN =
-  /^data:image\/png;base64,(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+  /^data:image\/png;base64,(?=[A-Za-z0-9+/])(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
 
 export type ReleaseRequestValidationResult =
   { success: true; data: ReleaseRequest } | { success: false; message: string };
