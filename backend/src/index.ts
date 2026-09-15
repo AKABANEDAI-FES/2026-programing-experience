@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import type { ReleaseRequest, ReleaseResponse } from 'shared';
+import type { ReleaseResponse } from 'shared';
 import { decodeImageDataUrl } from './lib/image';
+import { validateReleaseRequest } from './validation';
 
 type Bindings = CloudflareBindings & {
   ALLOWED_ORIGINS?: string;
@@ -56,16 +57,39 @@ app.get('/', (c) => {
 });
 
 app.post('/api/release', async (c) => {
-  const body = await c.req.json<Partial<ReleaseRequest>>();
-  const decoded = decodeImageDataUrl(body?.image_base64);
+  let requestBody: unknown;
+
+  try {
+    requestBody = await c.req.json<unknown>();
+  } catch {
+    const errorResponse: ReleaseResponse = {
+      success: false,
+      message: 'リクエストボディは有効なJSON形式で指定してください',
+    };
+
+    return c.json(errorResponse, 400);
+  }
+
+  const validationResult = validateReleaseRequest(requestBody);
+
+  if (!validationResult.success) {
+    const errorResponse: ReleaseResponse = {
+      success: false,
+      message: validationResult.message,
+    };
+
+    return c.json(errorResponse, 400);
+  }
+
+  const decoded = decodeImageDataUrl(validationResult.data.image_base64);
 
   if (!decoded.success) {
-    const errorRes: ReleaseResponse = {
+    const errorResponse: ReleaseResponse = {
       success: false,
       message: decoded.message,
     };
 
-    return c.json(errorRes, 400);
+    return c.json(errorResponse, 400);
   }
 
   const res: ReleaseResponse = {
