@@ -9,5 +9,6 @@
     "types": ["./worker-configuration.d.ts"],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx"
-  }
+  },
+  "exclude": ["tests"]
 }
