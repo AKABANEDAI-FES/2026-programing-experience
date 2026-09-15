@@ -7,4 +7,4 @@ package-lock.json
 *.png
 *.ico
 .github/CODEOWNERS
-worker-configuration.d.ts
+backend/worker-configuration.d.ts

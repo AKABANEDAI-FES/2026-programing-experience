@@ -185,6 +185,48 @@
   touch-action: none;
 }
 
+.canvasNoCursor {
+  cursor: none;
+}
+
+.cursorLayer {
+  grid-area: 1 / 1;
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 5 / 3;
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.penCursor,
+.eraserCursor,
+.fillCursor {
+  position: absolute;
+  min-width: 2px;
+  min-height: 2px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.penCursor {
+  border: 2px solid var(--cursor-color);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 80%);
+}
+
+.eraserCursor {
+  border: 2px dashed #6b7c77;
+  background: rgb(255 255 255 / 55%);
+}
+
+.fillCursor {
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgb(20 32 29 / 35%);
+  background: var(--cursor-color);
+}
+
 .highlightCanvas {
   z-index: 2;
   pointer-events: none;
@@ -232,6 +274,29 @@
   box-shadow: 0 2px 10px rgb(20 32 29 / 10%);
   pointer-events: none;
   text-align: center;
+}
+
+.nextButton {
+  align-self: flex-end;
+  min-width: 160px;
+  min-height: 52px;
+  padding: 10px 24px;
+  border: 0;
+  border-radius: 12px;
+  background: #176451;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nextButton:hover {
+  background: #104d3e;
+}
+
+.nextButton:focus-visible {
+  outline: 3px solid #176451;
+  outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {

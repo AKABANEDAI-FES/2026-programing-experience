@@ -5,11 +5,13 @@ import { DRAW_MODES, DRAW_MODE_COPY } from '../constants/drawModes';
 import { applyFillToEditingLayer } from '../lib/paint/applyFillToEditingLayer';
 import { createChangedPixelMask } from '../lib/paint/createChangedPixelMask';
 import { floodFill, type Rgba } from '../lib/paint/floodFill';
+import type { DrawingHistoryEntry } from '../types/drawing';
 import styles from './DrawingScreen.module.css';
 
 type DrawingScreenProps = {
   mode: DrawMode;
   onModeChange: (mode: DrawMode) => void;
+  onDrawingComplete: (imageData: string) => void;
 };
 
 type Point = {
@@ -19,14 +21,15 @@ type Point = {
 
 type Tool = 'pen' | 'eraser' | 'fill';
 
-type HistoryEntry = {
-  imageData: ImageData;
-  hasDrawing: boolean;
-};
-
 type FillFeedback = {
   id: number;
   message: string;
+};
+
+type CursorIndicator = {
+  leftPercent: number;
+  topPercent: number;
+  diameter: number;
 };
 
 const DRAWING_WIDTH = 1000;
@@ -35,6 +38,7 @@ const MAX_HISTORY_ENTRIES = 10;
 const UNFILLABLE_MESSAGE = 'この範囲は塗りつぶせないよ。線で囲んでみよう！';
 const FILL_ERROR_MESSAGE = 'うまく塗りつぶせなかったよ。もう一度試してね。';
 const HIGHLIGHT_COLOR: Rgba = { r: 239, g: 68, b: 68, a: 104 };
+const FILL_CURSOR_DIAMETER = 18;
 
 const COLORS = [
   { value: '#1f2937', label: 'くろ' },
@@ -60,15 +64,16 @@ const toRgba = (hex: string): Rgba => {
   };
 };
 
-export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
+export function DrawingScreen({ mode, onModeChange, onDrawingComplete }: DrawingScreenProps) {
   const backgroundCanvasRef = useRef<HTMLCanvasElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const highlightCanvasRef = useRef<HTMLCanvasElement>(null);
   const activePointerId = useRef<number | null>(null);
   const previousPoint = useRef<Point | null>(null);
+  const lastPointerClient = useRef<{ clientX: number; clientY: number } | null>(null);
   const isReadyToDraw = useRef(false);
   const hasDrawing = useRef(false);
-  const history = useRef<HistoryEntry[]>([]);
+  const history = useRef<DrawingHistoryEntry[]>([]);
   const nextFillFeedbackId = useRef(0);
   const [tool, setTool] = useState<Tool>('pen');
   const [color, setColor] = useState<string>(COLORS[0].value);
@@ -76,6 +81,7 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
   const [canUndo, setCanUndo] = useState(false);
   const [canClear, setCanClear] = useState(false);
   const [fillFeedback, setFillFeedback] = useState<FillFeedback | null>(null);
+  const [cursorIndicator, setCursorIndicator] = useState<CursorIndicator | null>(null);
   const copy = DRAW_MODE_COPY[mode];
 
   const cancelActiveStroke = () => {
@@ -219,6 +225,36 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
     };
   };
 
+  const updateCursorIndicatorAt = (canvas: HTMLCanvasElement, clientX: number, clientY: number) => {
+    const bounds = canvas.getBoundingClientRect();
+    const scale = bounds.width / DRAWING_WIDTH;
+
+    setCursorIndicator({
+      leftPercent: ((clientX - bounds.left) / bounds.width) * 100,
+      topPercent: ((clientY - bounds.top) / bounds.height) * 100,
+      diameter: tool === 'fill' ? FILL_CURSOR_DIAMETER : lineWidth * scale,
+    });
+  };
+
+  const updateCursorIndicator = (event: PointerEvent<HTMLCanvasElement>) => {
+    lastPointerClient.current = { clientX: event.clientX, clientY: event.clientY };
+    updateCursorIndicatorAt(event.currentTarget, event.clientX, event.clientY);
+  };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+
+    if (canvas === null || lastPointerClient.current === null) {
+      return;
+    }
+
+    updateCursorIndicatorAt(
+      canvas,
+      lastPointerClient.current.clientX,
+      lastPointerClient.current.clientY,
+    );
+  }, [tool, lineWidth]);
+
   const drawDot = (context: CanvasRenderingContext2D, point: Point) => {
     context.beginPath();
     context.arc(point.x, point.y, lineWidth / 2, 0, Math.PI * 2);
@@ -321,6 +357,7 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
 
     event.preventDefault();
     const point = getPoint(event);
+    updateCursorIndicator(event);
     clearFillFeedback();
 
     if (tool === 'fill') {
@@ -345,6 +382,8 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
   };
 
   const handlePointerMove = (event: PointerEvent<HTMLCanvasElement>) => {
+    updateCursorIndicator(event);
+
     if (activePointerId.current !== event.pointerId || previousPoint.current === null) {
       return;
     }
@@ -421,6 +460,28 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
     cancelActiveStroke();
     clearFillFeedback();
     onModeChange(nextMode);
+  };
+
+  const handleNext = () => {
+    const backgroundCanvas = backgroundCanvasRef.current;
+    const editingCanvas = canvasRef.current;
+
+    if (backgroundCanvas === null || editingCanvas === null) {
+      return;
+    }
+
+    const compositeCanvas = document.createElement('canvas');
+    compositeCanvas.width = DRAWING_WIDTH;
+    compositeCanvas.height = DRAWING_HEIGHT;
+    const compositeContext = compositeCanvas.getContext('2d');
+
+    if (compositeContext === null) {
+      return;
+    }
+
+    compositeContext.drawImage(backgroundCanvas, 0, 0);
+    compositeContext.drawImage(editingCanvas, 0, 0);
+    onDrawingComplete(compositeCanvas.toDataURL('image/png'));
   };
 
   return (
@@ -530,7 +591,7 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
         />
         <canvas
           ref={canvasRef}
-          className={styles.canvas}
+          className={`${styles.canvas} ${styles.canvasNoCursor}`}
           width={DRAWING_WIDTH}
           height={DRAWING_HEIGHT}
           role="img"
@@ -538,6 +599,8 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
           aria-describedby="drawing-instructions"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
+          onPointerEnter={updateCursorIndicator}
+          onPointerLeave={() => setCursorIndicator(null)}
           onPointerUp={finishStroke}
           onPointerCancel={finishStroke}
         />
@@ -548,6 +611,28 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
           height={DRAWING_HEIGHT}
           aria-hidden="true"
         />
+        <div className={styles.cursorLayer} aria-hidden="true">
+          {cursorIndicator !== null && (
+            <div
+              className={
+                tool === 'eraser'
+                  ? styles.eraserCursor
+                  : tool === 'fill'
+                    ? styles.fillCursor
+                    : styles.penCursor
+              }
+              style={
+                {
+                  left: `${cursorIndicator.leftPercent}%`,
+                  top: `${cursorIndicator.topPercent}%`,
+                  width: `${cursorIndicator.diameter}px`,
+                  height: `${cursorIndicator.diameter}px`,
+                  '--cursor-color': color,
+                } as CSSProperties
+              }
+            />
+          )}
+        </div>
         {fillFeedback !== null && (
           <div key={fillFeedback.id} className={styles.fillToast} role="status" aria-live="polite">
             {fillFeedback.message}
@@ -557,6 +642,9 @@ export function DrawingScreen({ mode, onModeChange }: DrawingScreenProps) {
           {copy.drawingHint}
         </p>
       </div>
+      <button type="button" className={styles.nextButton} onClick={handleNext}>
+        次へ
+      </button>
     </section>
   );
 }

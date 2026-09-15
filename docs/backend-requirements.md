@@ -6,7 +6,7 @@
 
 - **実行環境**: Cloudflare Workers
 - **データ保存先**: Cloudflare R2 (オブジェクトストレージ)
-- **リアルタイム通信**: WebSocket (または Cloudflare Durable Objects / SSE を検討)
+- **リアルタイム通信**: Cloudflare Durable Objects + WebSocket
 - **言語**: TypeScript (Honoフレームワークを使用)
 
 ## 2. サーバーの主な役割
