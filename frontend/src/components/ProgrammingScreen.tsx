@@ -1,4 +1,5 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useState } from 'react';
+import { MAX_COMMANDS, type Command } from 'shared';
 import { BlockWorkspace } from './BlockWorkspace';
 import styles from './ProgrammingScreen.module.css';
 
@@ -7,10 +8,10 @@ type ProgrammingScreenProps = {
 };
 
 export function ProgrammingScreen({ imageData }: ProgrammingScreenProps) {
-  const workspaceJsonRef = useRef<Record<string, unknown>>({});
+  const [commands, setCommands] = useState<Command[]>([]);
 
-  const handleWorkspaceChange = useCallback((json: Record<string, unknown>) => {
-    workspaceJsonRef.current = json;
+  const handleCommandsChange = useCallback((nextCommands: Command[]) => {
+    setCommands(nextCommands);
   }, []);
 
   return (
@@ -27,8 +28,13 @@ export function ProgrammingScreen({ imageData }: ProgrammingScreenProps) {
         <div className={styles.stage} aria-label="プログラミング対象の画像">
           <img className={styles.targetImage} src={imageData} alt="プログラミング対象の作品" />
         </div>
-        <div className={styles.editorContainer}>
-          <BlockWorkspace onWorkspaceChange={handleWorkspaceChange} />
+        <div className={styles.editor}>
+          <p className={styles.counter} aria-live="polite">
+            つかったブロック {commands.length} / {MAX_COMMANDS}
+          </p>
+          <div className={styles.editorContainer}>
+            <BlockWorkspace onCommandsChange={handleCommandsChange} />
+          </div>
         </div>
       </div>
     </section>
