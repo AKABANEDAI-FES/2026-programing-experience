@@ -18,7 +18,7 @@ const workspace = (...blocks: unknown[]) => ({ blocks: { languageVersion: 0, blo
 
 test('つながったブロックを上から順にCommand[]へ変換する', () => {
   const json = workspace(
-    moveBlock('swim', {
+    moveBlock('spin', {
       x: 20,
       y: 20,
       next: { block: sayBlock('こんにちは', { next: { block: moveBlock('jump') } }) },
@@ -26,7 +26,7 @@ test('つながったブロックを上から順にCommand[]へ変換する', ()
   );
 
   assert.deepEqual(workspaceToCommands(json), [
-    { type: 'move', motion: 'swim' },
+    { type: 'move', motion: 'spin' },
     { type: 'say', text: 'こんにちは' },
     { type: 'move', motion: 'jump' },
   ]);

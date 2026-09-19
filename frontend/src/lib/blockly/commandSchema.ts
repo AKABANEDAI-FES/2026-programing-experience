@@ -9,7 +9,6 @@ export const TEXT_FIELD_NAME = 'TEXT';
 export const DEFAULT_SAY_TEXT = 'こんにちは';
 
 export const MOTION_OPTIONS: [label: string, motion: Motion][] = [
-  ['およぐ', 'swim'],
   ['ジャンプする', 'jump'],
   ['くるっとまわる', 'spin'],
 ];
