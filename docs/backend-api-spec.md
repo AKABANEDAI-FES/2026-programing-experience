@@ -8,7 +8,7 @@
 
 - **エンドポイント URL**: `http://localhost:8787/api/release` （※本番環境ではCloudflareのURLに変更）
 - **HTTPメソッド**: `POST`
-- **目的**: 参加者の作品データをサーバーで受け取り、保存および大画面への通知準備を行う。
+- **目的**: 参加者の作品データをサーバーで受け取り、保存および大画面への通知を行う。
 
 ### リクエスト（フロントから送るデータ）
 
@@ -73,4 +73,24 @@
 - 通常のHTTPアクセスには `426 Upgrade Required` を返す。
 - 許可されていない接続元には `403 Forbidden` を返す。
 
-Issue #16ではWebSocket接続の確立のみを行います。通知メッセージの送信、複数接続の管理、ブロードキャスト処理はIssue #25で実装します。
+接続はDurable ObjectsのHibernation APIで管理し、放流APIで画像のR2保存が完了すると、接続中のすべての大画面へ `creature_added` メッセージを送信します。通知に失敗しても、画像が保存済みであれば放流APIは200を返します。
+
+### サーバーからの通知メッセージ
+
+```json
+{
+  "type": "creature_added",
+  "creature": {
+    "id": "12345678-1234-4234-8234-123456789abc",
+    "mode": "free",
+    "imageUrl": "creatures/1789452946224-12345678-1234-4234-8234-123456789abc.png",
+    "commands": [
+      { "type": "move", "motion": "jump" },
+      { "type": "say", "text": "こんにちは" }
+    ],
+    "createdAt": 1789452946224
+  }
+}
+```
+
+`imageUrl` はR2のオブジェクトキーであり、画像の取得にはIssue #63で追加予定の `GET /api/images/:key` を使います。
