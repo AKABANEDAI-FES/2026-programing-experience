@@ -59,6 +59,7 @@ app.get('/', (c) => {
 app.post('/api/release', async (c) => {
   const body = await c.req.json<Partial<ReleaseRequest>>();
   const decoded = decodeImageDataUrl(body?.image_base64);
+  const commands = body.commands ?? [];
 
   if (!decoded.success) {
     const errorRes: ReleaseResponse = {
@@ -70,7 +71,7 @@ app.post('/api/release', async (c) => {
   }
 
   try {
-    await saveImage(c.env.IMAGES, decoded.image);
+    await saveImage(c.env.IMAGES, decoded.image, commands);
   } catch (error) {
     console.error('R2への保存に失敗しました', error);
 
