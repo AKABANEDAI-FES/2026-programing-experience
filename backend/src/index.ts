@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { ReleaseResponse } from 'shared';
 import { decodeImageDataUrl } from './lib/image';
+import { saveImage } from './lib/storage';
 import { validateReleaseRequest } from './validation';
 
 type Bindings = CloudflareBindings & {
@@ -90,6 +91,19 @@ app.post('/api/release', async (c) => {
     };
 
     return c.json(errorResponse, 400);
+  }
+
+  try {
+    await saveImage(c.env.IMAGES, decoded.image);
+  } catch (error) {
+    console.error('R2への保存に失敗しました', error);
+
+    const errorRes: ReleaseResponse = {
+      success: false,
+      message: 'データの受け取りに失敗しました',
+    };
+
+    return c.json(errorRes, 500);
   }
 
   const res: ReleaseResponse = {

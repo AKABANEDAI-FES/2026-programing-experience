@@ -29,12 +29,13 @@
   //     "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
   //   }
   // ],
-  // "r2_buckets": [
-  //   {
-  //     "binding": "MY_BUCKET",
-  //     "bucket_name": "my-bucket"
-  //   }
-  // ],
+  "r2_buckets": [
+    {
+      "binding": "IMAGES",
+      "bucket_name": "programing-experience-images-prod",
+      "preview_bucket_name": "programing-experience-images-dev",
+    },
+  ],
   // "d1_databases": [
   //   {
   //     "binding": "MY_DB",
