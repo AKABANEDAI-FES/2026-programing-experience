@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
+import {
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent,
+} from 'react';
 import type { DrawMode } from 'shared';
 import inyaaOutline from '../assets/inyaa-outline.svg';
 import { DRAW_MODES, DRAW_MODE_COPY } from '../constants/drawModes';
@@ -425,6 +432,7 @@ export function DrawingScreen({ mode, onModeChange, onDrawingComplete }: Drawing
       return;
     }
 
+    cancelActiveStroke();
     clearFillFeedback();
     context.globalCompositeOperation = 'source-over';
     context.putImageData(previousState.imageData, 0, 0);
@@ -432,6 +440,41 @@ export function DrawingScreen({ mode, onModeChange, onDrawingComplete }: Drawing
     setCanClear(previousState.hasDrawing);
     setCanUndo(history.current.length > 0);
   };
+
+  const handleUndoKeyDown = useEffectEvent((event: KeyboardEvent) => {
+    if (
+      event.defaultPrevented ||
+      event.isComposing ||
+      event.repeat ||
+      !(event.ctrlKey || event.metaKey) ||
+      event.shiftKey ||
+      event.altKey ||
+      event.key.toLowerCase() !== 'z' ||
+      !isReadyToDraw.current ||
+      history.current.length === 0
+    ) {
+      return;
+    }
+
+    // 入力欄ではブラウザー本来のUndoを優先する。
+    const target = event.target;
+    if (
+      target instanceof HTMLElement &&
+      (target.isContentEditable || target.closest('input, textarea, select, [role="textbox"]'))
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    handleUndo();
+  });
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => handleUndoKeyDown(event);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleClear = () => {
     const context = canvasRef.current?.getContext('2d');
