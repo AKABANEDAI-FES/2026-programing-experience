@@ -1,8 +1,9 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { ReleaseResponse } from 'shared';
+import { createCreatureAddedMessage } from './lib/display';
 import { decodeImageDataUrl } from './lib/image';
-import { saveImage } from './lib/storage';
+import { saveImage, type SavedImage } from './lib/storage';
 import { validateReleaseRequest } from './validation';
 
 type Bindings = CloudflareBindings & {
@@ -10,6 +11,7 @@ type Bindings = CloudflareBindings & {
 };
 
 const DEVELOPMENT_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173'];
+const DISPLAY_ROOM_NAME = 'main';
 
 const getAllowedOrigins = (configuredOrigins?: string): string[] => {
   return (configuredOrigins?.split(',') ?? DEVELOPMENT_ORIGINS)
@@ -47,7 +49,7 @@ app.get('/ws/display', (c) => {
     return c.text('許可されていない接続元です', 403);
   }
 
-  const id = c.env.DISPLAY_ROOM.idFromName('main');
+  const id = c.env.DISPLAY_ROOM.idFromName(DISPLAY_ROOM_NAME);
   const room = c.env.DISPLAY_ROOM.get(id);
 
   return room.fetch(c.req.raw);
@@ -93,8 +95,10 @@ app.post('/api/release', async (c) => {
     return c.json(errorResponse, 400);
   }
 
+  let saved: SavedImage;
+
   try {
-    await saveImage(c.env.IMAGES, decoded.image);
+    saved = await saveImage(c.env.IMAGES, decoded.image);
   } catch (error) {
     console.error('R2への保存に失敗しました', error);
 
@@ -104,6 +108,15 @@ app.post('/api/release', async (c) => {
     };
 
     return c.json(errorRes, 500);
+  }
+
+  try {
+    const room = c.env.DISPLAY_ROOM.get(c.env.DISPLAY_ROOM.idFromName(DISPLAY_ROOM_NAME));
+    await room.broadcast(
+      createCreatureAddedMessage(saved, validationResult.data.mode, validationResult.data.commands),
+    );
+  } catch (error) {
+    console.error('大画面への通知に失敗しました', error);
   }
 
   const res: ReleaseResponse = {
