@@ -1,59 +1,27 @@
 import { useEffect, useRef } from 'react';
 import * as Blockly from 'blockly';
 import * as ja from 'blockly/msg/ja';
-import 'blockly/blocks';
+import type { Command } from 'shared';
+import { MAX_COMMANDS } from 'shared';
+import { defineCommandBlocks } from '../lib/blockly/blocks';
+import { TOOLBOX } from '../lib/blockly/toolbox';
+import { workspaceToCommands } from '../lib/blockly/workspaceToCommands';
 import styles from './BlockWorkspace.module.css';
 
 Blockly.setLocale(ja as unknown as Record<string, string>);
+defineCommandBlocks();
 
 type BlockWorkspaceProps = {
-  onWorkspaceChange?: (workspaceJson: Record<string, unknown>) => void;
+  onCommandsChange?: (commands: Command[]) => void;
 };
 
-const TOOLBOX: Blockly.utils.toolbox.ToolboxDefinition = {
-  kind: 'categoryToolbox',
-  contents: [
-    {
-      kind: 'category',
-      name: 'ろんり',
-      colour: '210',
-      contents: [
-        { kind: 'block', type: 'controls_if' },
-        { kind: 'block', type: 'logic_compare' },
-        { kind: 'block', type: 'logic_boolean' },
-      ],
-    },
-    {
-      kind: 'category',
-      name: 'くりかえし',
-      colour: '120',
-      contents: [
-        { kind: 'block', type: 'controls_repeat_ext' },
-        { kind: 'block', type: 'controls_whileUntil' },
-      ],
-    },
-    {
-      kind: 'category',
-      name: 'すうじ',
-      colour: '230',
-      contents: [{ kind: 'block', type: 'math_number' }],
-    },
-    {
-      kind: 'category',
-      name: 'もじ',
-      colour: '160',
-      contents: [{ kind: 'block', type: 'text' }],
-    },
-  ],
-};
-
-export function BlockWorkspace({ onWorkspaceChange }: BlockWorkspaceProps) {
+export function BlockWorkspace({ onCommandsChange }: BlockWorkspaceProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const onWorkspaceChangeRef = useRef(onWorkspaceChange);
+  const onCommandsChangeRef = useRef(onCommandsChange);
 
   useEffect(() => {
-    onWorkspaceChangeRef.current = onWorkspaceChange;
-  }, [onWorkspaceChange]);
+    onCommandsChangeRef.current = onCommandsChange;
+  }, [onCommandsChange]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -62,11 +30,15 @@ export function BlockWorkspace({ onWorkspaceChange }: BlockWorkspaceProps) {
       return;
     }
 
-    const workspace = Blockly.inject(container, { toolbox: TOOLBOX });
+    const workspace = Blockly.inject(container, {
+      toolbox: TOOLBOX,
+      maxBlocks: MAX_COMMANDS,
+      trashcan: true,
+    });
 
     const handleChange = () => {
       const json = Blockly.serialization.workspaces.save(workspace);
-      onWorkspaceChangeRef.current?.(json);
+      onCommandsChangeRef.current?.(workspaceToCommands(json));
     };
     workspace.addChangeListener(handleChange);
 

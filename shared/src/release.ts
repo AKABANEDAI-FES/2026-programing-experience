@@ -1,9 +1,13 @@
 export type DrawMode = 'free' | 'coloring';
 
+/** 大画面で再生できる動きの種類 */
+export const MOTIONS = ['jump', 'spin'] as const;
+
+export type Motion = (typeof MOTIONS)[number];
+
 export interface MoveCommand {
   type: 'move';
-  /** #9 で確定。確定したら 'swim' | 'jump' などのユニオン型に絞る */
-  motion: string;
+  motion: Motion;
 }
 
 export interface SayCommand {
