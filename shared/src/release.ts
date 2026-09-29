@@ -16,6 +16,9 @@ export type Command = MoveCommand | SayCommand;
 /** 画面③で追加できるコマンドの上限 */
 export const MAX_COMMANDS = 5;
 
+// 【設定】セリフ1件の最大文字数。調整するときはこの数値を変更する。
+export const MAX_SAY_TEXT_LENGTH = 25;
+
 /** 大画面に同時表示する生き物の上限。超えたら古い順に削除（FIFO） */
 export const MAX_CREATURES = 30;
 

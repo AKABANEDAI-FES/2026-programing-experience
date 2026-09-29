@@ -1,4 +1,4 @@
-import { MAX_COMMANDS, type ReleaseRequest } from 'shared';
+import { MAX_COMMANDS, MAX_SAY_TEXT_LENGTH, type ReleaseRequest } from 'shared/release';
 
 const PNG_DATA_URL_PATTERN =
   /^data:image\/png;base64,(?=[A-Za-z0-9+/])(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
@@ -21,9 +21,15 @@ const validateCommand = (command: unknown, index: number): string | null => {
   }
 
   if (command.type === 'say') {
-    return typeof command.text === 'string'
-      ? null
-      : `commands[${index}].text は文字列で指定してください`;
+    if (typeof command.text !== 'string') {
+      return `commands[${index}].text は文字列で指定してください`;
+    }
+
+    if (Array.from(command.text).length > MAX_SAY_TEXT_LENGTH) {
+      return `commands[${index}].text は${MAX_SAY_TEXT_LENGTH}文字以下で指定してください`;
+    }
+
+    return null;
   }
 
   return `commands[${index}].type は "move" または "say" を指定してください`;
