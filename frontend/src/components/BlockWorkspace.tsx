@@ -4,12 +4,14 @@ import * as ja from 'blockly/msg/ja';
 import type { Command } from 'shared';
 import { MAX_COMMANDS } from 'shared';
 import { defineCommandBlocks } from '../lib/blockly/blocks';
+import { removeUnusedContextMenuItems } from '../lib/blockly/contextMenu';
 import { TOOLBOX } from '../lib/blockly/toolbox';
 import { workspaceToCommands } from '../lib/blockly/workspaceToCommands';
 import styles from './BlockWorkspace.module.css';
 
 Blockly.setLocale(ja as unknown as Record<string, string>);
 defineCommandBlocks();
+removeUnusedContextMenuItems();
 
 type BlockWorkspaceProps = {
   onCommandsChange?: (commands: Command[]) => void;

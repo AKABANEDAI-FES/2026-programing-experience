@@ -10,6 +10,8 @@ type BlockState = {
   type?: string;
   x?: number;
   y?: number;
+  enabled?: boolean;
+  disabledReasons?: string[];
   fields?: Record<string, unknown>;
   next?: { block?: BlockState };
 };
@@ -18,7 +20,14 @@ type WorkspaceState = {
   blocks?: { blocks?: BlockState[] };
 };
 
+const isDisabled = (block: BlockState) =>
+  block.enabled === false || (block.disabledReasons?.length ?? 0) > 0;
+
 const toCommand = (block: BlockState): Command | null => {
+  if (isDisabled(block)) {
+    return null;
+  }
+
   const fields = block.fields ?? {};
 
   if (block.type === MOVE_BLOCK_TYPE) {
