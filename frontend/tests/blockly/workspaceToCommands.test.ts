@@ -54,3 +54,14 @@ test('コマンド以外のブロックは無視する', () => {
 
   assert.deepEqual(workspaceToCommands(json), [{ type: 'say', text: 'ここは のこる' }]);
 });
+
+test('無効化されたブロックは変換しない', () => {
+  const json = workspace(
+    moveBlock('jump', {
+      disabledReasons: ['MANUALLY_DISABLED'],
+      next: { block: sayBlock('やあ', { next: { block: moveBlock('spin', { enabled: false }) } }) },
+    }),
+  );
+
+  assert.deepEqual(workspaceToCommands(json), [{ type: 'say', text: 'やあ' }]);
+});
