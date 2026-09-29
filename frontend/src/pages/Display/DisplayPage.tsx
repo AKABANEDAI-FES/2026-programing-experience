@@ -39,11 +39,11 @@ export function DisplayPage() {
 
   const status = useCreatureStream(handleCreature);
 
+  // ref は再描画や StrictMode でも null で呼ばれるため、ここでは DOM の参照だけを管理する。
+  // 動きとコマンドは作品が画面から取り除かれるときに消す。
   const registerNode = (id: string) => (root: HTMLDivElement | null) => {
     if (root === null) {
       nodes.current.delete(id);
-      motions.current.delete(id);
-      commands.current.delete(id);
       return;
     }
 
