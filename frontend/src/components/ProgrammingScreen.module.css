@@ -41,6 +41,20 @@
   min-height: 460px;
 }
 
+.editor {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  min-height: 0;
+}
+
+.counter {
+  margin: 0;
+  color: #316b5f;
+  font-size: 14px;
+  font-weight: 700;
+}
+
 .stage,
 .editorContainer {
   border: 2px solid #aebfba;
