@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import type { Command } from 'shared';
 import { saveImage } from '../src/lib/storage.ts';
 
 const createImage = () => ({
@@ -23,7 +24,7 @@ test('タイムスタンプとUUIDを含むキーで画像を保存する', asyn
   const bucket = createBucket();
   const image = createImage();
 
-  const saved = await saveImage(bucket, image);
+  const saved = await saveImage(bucket, image, []);
 
   assert.equal(bucket.calls.length, 1);
   assert.match(
@@ -35,19 +36,26 @@ test('タイムスタンプとUUIDを含むキーで画像を保存する', asyn
   assert.equal(bucket.calls[0].value, image.bytes);
 });
 
-test('Content-Type を付けて保存する', async () => {
+test('Content-Type と commands を付けて保存する', async () => {
   const bucket = createBucket();
+  const commands: Command[] = [
+    { type: 'move', motion: 'jump' },
+    { type: 'say', text: 'こんにちは' },
+  ];
 
-  await saveImage(bucket, createImage());
+  await saveImage(bucket, createImage(), commands);
 
-  assert.deepEqual(bucket.calls[0].options, { httpMetadata: { contentType: 'image/png' } });
+  assert.deepEqual(bucket.calls[0].options, {
+    httpMetadata: { contentType: 'image/png' },
+    customMetadata: { commands: JSON.stringify(commands) },
+  });
 });
 
 test('保存のたびに異なるキーを使う', async () => {
   const bucket = createBucket();
 
-  const first = await saveImage(bucket, createImage());
-  const second = await saveImage(bucket, createImage());
+  const first = await saveImage(bucket, createImage(), []);
+  const second = await saveImage(bucket, createImage(), []);
 
   assert.notEqual(first.id, second.id);
   assert.notEqual(first.key, second.key);
@@ -60,5 +68,5 @@ test('R2への保存に失敗した場合はエラーをそのまま投げる', 
     },
   };
 
-  await assert.rejects(saveImage(bucket, createImage()), /R2 unavailable/);
+  await assert.rejects(saveImage(bucket, createImage(), []), /R2 unavailable/);
 });

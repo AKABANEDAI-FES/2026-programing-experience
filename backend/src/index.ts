@@ -98,7 +98,7 @@ app.post('/api/release', async (c) => {
   let saved: SavedImage;
 
   try {
-    saved = await saveImage(c.env.IMAGES, decoded.image);
+    saved = await saveImage(c.env.IMAGES, decoded.image, validationResult.data.commands);
   } catch (error) {
     console.error('R2への保存に失敗しました', error);
 
