@@ -4,6 +4,7 @@ import {
   MOVE_BLOCK_TYPE,
   SAY_BLOCK_TYPE,
   TEXT_FIELD_NAME,
+  limitSayText,
 } from './commandSchema.ts';
 
 type BlockState = {
@@ -35,7 +36,7 @@ const toCommand = (block: BlockState): Command | null => {
   }
 
   if (block.type === SAY_BLOCK_TYPE) {
-    return { type: 'say', text: String(fields[TEXT_FIELD_NAME] ?? '') };
+    return { type: 'say', text: limitSayText(String(fields[TEXT_FIELD_NAME] ?? '')) };
   }
 
   return null;

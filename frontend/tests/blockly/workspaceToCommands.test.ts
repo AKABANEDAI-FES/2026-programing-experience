@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { MAX_SAY_TEXT_LENGTH } from 'shared/release';
 import { workspaceToCommands } from '../../src/lib/blockly/workspaceToCommands.ts';
 
 const moveBlock = (motion: string, rest: Record<string, unknown> = {}) => ({
@@ -64,4 +65,12 @@ test('無効化されたブロックは変換しない', () => {
   );
 
   assert.deepEqual(workspaceToCommands(json), [{ type: 'say', text: 'やあ' }]);
+});
+
+test('上限を超えるセリフは上限の文字数で切る', () => {
+  const json = workspace(sayBlock('あ'.repeat(MAX_SAY_TEXT_LENGTH + 5)));
+
+  assert.deepEqual(workspaceToCommands(json), [
+    { type: 'say', text: 'あ'.repeat(MAX_SAY_TEXT_LENGTH) },
+  ]);
 });
