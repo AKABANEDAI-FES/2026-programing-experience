@@ -248,7 +248,7 @@ app.post('/api/release', async (c) => {
 
   if (completion.shouldNotify) {
     try {
-      room.broadcast(createCreatureAddedMessage(saved, validationResult.data.commands));
+      await room.broadcast(createCreatureAddedMessage(saved, validationResult.data.commands));
     } catch (error) {
       console.error('大画面への通知に失敗しました', error);
     }
