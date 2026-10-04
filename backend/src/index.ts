@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { ReleaseResponse } from 'shared';
 import { createCreatureAddedMessage } from './lib/display';
+import { fingerprintReleaseRequest, isValidIdempotencyKey } from './lib/idempotency';
 import { decodeImageDataUrl } from './lib/image';
 import { saveImage, type SavedImage } from './lib/storage';
 import { validateReleaseRequest } from './validation';
@@ -30,7 +31,7 @@ app.use(
       return allowedOrigins.includes(origin) ? origin : null;
     },
     allowMethods: ['POST', 'OPTIONS'],
-    allowHeaders: ['Content-Type'],
+    allowHeaders: ['Content-Type', 'Idempotency-Key'],
     maxAge: 600,
   }),
 );
@@ -60,6 +61,17 @@ app.get('/', (c) => {
 });
 
 app.post('/api/release', async (c) => {
+  const idempotencyKey = c.req.header('Idempotency-Key');
+
+  if (!isValidIdempotencyKey(idempotencyKey)) {
+    const errorResponse: ReleaseResponse = {
+      success: false,
+      message: 'Idempotency-Key はUUID v4で指定してください',
+    };
+
+    return c.json(errorResponse, 400);
+  }
+
   let requestBody: unknown;
 
   try {
@@ -95,36 +107,154 @@ app.post('/api/release', async (c) => {
     return c.json(errorResponse, 400);
   }
 
-  let saved: SavedImage;
+  const fingerprint = await fingerprintReleaseRequest(validationResult.data);
+  const room = c.env.DISPLAY_ROOM.get(c.env.DISPLAY_ROOM.idFromName(DISPLAY_ROOM_NAME));
+  let claim: Awaited<ReturnType<typeof room.claimRelease>>;
 
   try {
-    saved = await saveImage(c.env.IMAGES, decoded.image, validationResult.data.commands);
+    claim = await room.claimRelease(idempotencyKey, fingerprint, Date.now());
   } catch (error) {
-    console.error('R2への保存に失敗しました', error);
+    console.error('放流処理の状態を確認できませんでした', error);
 
-    const errorRes: ReleaseResponse = {
+    const errorResponse: ReleaseResponse = {
       success: false,
-      message: 'データの受け取りに失敗しました',
+      code: 'RELEASE_STATUS_UNKNOWN',
+      message: '保存状況を確認できませんでした。同じ作品のまま再確認してください。',
     };
 
-    return c.json(errorRes, 500);
+    return c.json(errorResponse, 503);
   }
 
+  if (claim.status === 'in_progress') {
+    const errorResponse: ReleaseResponse = {
+      success: false,
+      code: 'REQUEST_IN_PROGRESS',
+      message: 'この作品はまだ送信処理中です。少し待ってから同じ内容で再確認してください。',
+    };
+
+    return c.json(errorResponse, 409);
+  }
+
+  if (claim.status === 'key_reused') {
+    const errorResponse: ReleaseResponse = {
+      success: false,
+      code: 'IDEMPOTENCY_KEY_REUSED',
+      message: '送信キーが別の内容で使われています。新しいキーで再送します。',
+    };
+
+    return c.json(errorResponse, 409);
+  }
+
+  if (claim.status === 'succeeded') {
+    return c.json(claim.response, 200);
+  }
+
+  let saved: SavedImage;
   try {
-    const room = c.env.DISPLAY_ROOM.get(c.env.DISPLAY_ROOM.idFromName(DISPLAY_ROOM_NAME));
-    await room.broadcast(
-      createCreatureAddedMessage(saved, validationResult.data.mode, validationResult.data.commands),
-    );
+    const existing = await c.env.IMAGES.head(claim.saved.key);
+
+    if (existing?.customMetadata?.requestFingerprint === fingerprint) {
+      saved = claim.saved;
+    } else if (existing !== null) {
+      throw new Error('R2に同じ作品IDの異なる画像が存在します');
+    } else {
+      saved = await saveImage(
+        c.env.IMAGES,
+        decoded.image,
+        validationResult.data.commands,
+        claim.saved,
+        fingerprint,
+      );
+    }
   } catch (error) {
-    console.error('大画面への通知に失敗しました', error);
+    console.error('R2への保存結果を確認します', error);
+
+    try {
+      const existing = await c.env.IMAGES.head(claim.saved.key);
+
+      if (existing?.customMetadata?.requestFingerprint === fingerprint) {
+        saved = claim.saved;
+      } else if (existing === null) {
+        await room.markReleaseFailed(idempotencyKey, fingerprint, claim.attemptToken, Date.now());
+
+        const errorResponse: ReleaseResponse = {
+          success: false,
+          code: 'IMAGE_SAVE_FAILED',
+          message: '画像を保存できませんでした。同じ作品のまま再送してください。',
+        };
+
+        return c.json(errorResponse, 500);
+      } else {
+        const errorResponse: ReleaseResponse = {
+          success: false,
+          code: 'RELEASE_STATUS_UNKNOWN',
+          message: '保存状況を確認できませんでした。同じ作品のまま再確認してください。',
+        };
+
+        return c.json(errorResponse, 503);
+      }
+    } catch (statusError) {
+      console.error('R2への保存状況を確認できませんでした', statusError);
+
+      const errorResponse: ReleaseResponse = {
+        success: false,
+        code: 'RELEASE_STATUS_UNKNOWN',
+        message: '保存状況を確認できませんでした。同じ作品のまま再確認してください。',
+      };
+
+      return c.json(errorResponse, 503);
+    }
   }
 
-  const res: ReleaseResponse = {
+  const successResponse: ReleaseResponse = {
     success: true,
-    message: '無事に海へ放流されました！',
+    message: '作品を保存しました！',
   };
 
-  return c.json(res, 200);
+  let completion: Awaited<ReturnType<typeof room.completeRelease>>;
+  try {
+    completion = await room.completeRelease(
+      idempotencyKey,
+      fingerprint,
+      claim.attemptToken,
+      successResponse,
+      Date.now(),
+    );
+  } catch (error) {
+    console.error('放流APIの処理結果を保存できませんでした', error);
+
+    const errorResponse: ReleaseResponse = {
+      success: false,
+      code: 'RELEASE_STATUS_UNKNOWN',
+      message: '保存状況を確認できませんでした。同じ作品のまま再確認してください。',
+    };
+
+    return c.json(errorResponse, 503);
+  }
+
+  if (completion.status === 'in_progress') {
+    const errorResponse: ReleaseResponse = {
+      success: false,
+      code: 'REQUEST_IN_PROGRESS',
+      message: 'この作品はまだ送信処理中です。少し待ってから同じ内容で再確認してください。',
+    };
+
+    return c.json(errorResponse, 409);
+  }
+
+  if (completion.status === 'succeeded') {
+    return c.json(completion.response, 200);
+  }
+
+  if (completion.shouldNotify) {
+    try {
+      room.broadcast(createCreatureAddedMessage(saved, validationResult.data.commands));
+    } catch (error) {
+      console.error('大画面への通知に失敗しました', error);
+    }
+  }
+
+  return c.json(successResponse, 200);
 });
 
 export { DisplayRoom } from './durable-objects/DisplayRoom';

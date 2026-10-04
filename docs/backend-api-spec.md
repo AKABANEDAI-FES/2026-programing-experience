@@ -12,19 +12,32 @@
 
 ### リクエスト（フロントから送るデータ）
 
-- **Headers**: `Content-Type: application/json`
+- **Headers**:
+  - `Content-Type: application/json`
+  - `Idempotency-Key: <UUID v4>`（同一作品の再送には同じキーを使用）
 - **Body**:
 
 ```json
 {
-  "mode": "free", // 文字列: "free"（自由描画）または "coloring"（塗り絵）
   "image_base64": "data:image/png;base64,...", // 文字列: キャンバスの画像データ
   "commands": [
     { "type": "move", "motion": "jump" },
     { "type": "say", "text": "こんにちは" }
-  ] // 最大5件のコマンドオブジェクト配列
+  ] // 0〜5件のコマンドオブジェクト配列。空配列も受け付ける
 }
 ```
+
+描画モードは参加者画面で使用しますが、放流APIおよび大画面通知には含めません。
+
+### 冪等性キー
+
+- フロントエンドは放流操作の初回送信時に `crypto.randomUUID()` でキーを生成します。
+- 同じ内容の再試行では同じキーを使います。内容を変更して送信し直す場合は新しいキーを使います。
+- 同じキー・同じ内容の送信が成功済みの場合、APIは保存済みの成功レスポンスを返し、R2への二重保存や通知の再発行を行いません。
+- 同じキーの処理が進行中の場合は、`409 Conflict` と `REQUEST_IN_PROGRESS` を返します。少し待ってから、同じキーで再確認できます。
+- 同じキーが別の内容に使われた場合は、`409 Conflict` と `IDEMPOTENCY_KEY_REUSED` を返します。フロントエンドは新しいキーで再送します。
+- 成功結果は24時間保持します。処理が一定時間残った場合は、再送時にR2の保存状況を確認してから処理を再開します。
+- バリデーションに失敗したリクエストは冪等性キーを確定しません。画像保存に失敗した場合も、同じキー・同じ内容で再試行できます。
 
 `commands` の各要素は以下のいずれかです。`type: "move"` の `motion` は現時点では文字列であり、許可する動きの種類は画面③の実装とあわせて後で制限します。
 
@@ -45,7 +58,7 @@
 ```json
 {
   "success": true,
-  "message": "無事に海へ放流されました！"
+  "message": "作品を保存しました！"
 }
 ```
 
@@ -54,9 +67,11 @@
 ```json
 {
   "success": false,
-  "message": "mode は \"free\" または \"coloring\" を指定してください"
+  "message": "commands は配列で指定してください"
 }
 ```
+
+同じキーの処理中、または同じキーが異なるリクエスト内容で使われた場合は `409 Conflict` を返します。処理中は `code: "REQUEST_IN_PROGRESS"`、キー再利用時は `code: "IDEMPOTENCY_KEY_REUSED"` を設定します。
 
 ### 失敗時 (ステータスコード: 500 Internal Server Error)
 
@@ -66,6 +81,10 @@
   "message": "データの受け取りに失敗しました"
 }
 ```
+
+R2への保存結果や処理記録の状態を確認できない場合は `503 Service Unavailable` と `code: "RELEASE_STATUS_UNKNOWN"` を返します。この場合、フロントエンドは内容を保持し、同じキーで手動確認を続けます。
+
+APIの成功は画像がR2に保存されたことを意味します。WebSocket通知はベストエフォートで、通知に失敗してもAPIは成功を返します。
 
 ## 2. 大画面WebSocket接続
 
@@ -93,7 +112,6 @@
   "type": "creature_added",
   "creature": {
     "id": "12345678-1234-4234-8234-123456789abc",
-    "mode": "free",
     "imageUrl": "creatures/1789452946224-12345678-1234-4234-8234-123456789abc.png",
     "commands": [
       { "type": "move", "motion": "jump" },

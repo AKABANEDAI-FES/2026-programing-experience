@@ -28,7 +28,6 @@ export const MAX_CREATURES = 30;
 
 /** POST /api/release のリクエストボディ */
 export interface ReleaseRequest {
-  mode: DrawMode;
   image_base64: string; // Data URL 形式: "data:image/png;base64,..."
   commands: Command[];
 }
@@ -41,6 +40,11 @@ export interface ReleaseSuccessResponse {
 export interface ReleaseErrorResponse {
   success: false;
   message: string;
+  code?:
+    | 'REQUEST_IN_PROGRESS'
+    | 'IDEMPOTENCY_KEY_REUSED'
+    | 'IMAGE_SAVE_FAILED'
+    | 'RELEASE_STATUS_UNKNOWN';
 }
 
 export type ReleaseResponse = ReleaseSuccessResponse | ReleaseErrorResponse;
