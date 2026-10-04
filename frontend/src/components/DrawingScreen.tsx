@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
 import type { DrawMode } from 'shared';
 import inyaaOutline from '../assets/inyaa-outline.svg';
 import { DRAW_MODES, DRAW_MODE_COPY } from '../constants/drawModes';
@@ -225,16 +225,19 @@ export function DrawingScreen({ mode, onModeChange, onDrawingComplete }: Drawing
     };
   };
 
-  const updateCursorIndicatorAt = (canvas: HTMLCanvasElement, clientX: number, clientY: number) => {
-    const bounds = canvas.getBoundingClientRect();
-    const scale = bounds.width / DRAWING_WIDTH;
+  const updateCursorIndicatorAt = useCallback(
+    (canvas: HTMLCanvasElement, clientX: number, clientY: number) => {
+      const bounds = canvas.getBoundingClientRect();
+      const scale = bounds.width / DRAWING_WIDTH;
 
-    setCursorIndicator({
-      leftPercent: ((clientX - bounds.left) / bounds.width) * 100,
-      topPercent: ((clientY - bounds.top) / bounds.height) * 100,
-      diameter: tool === 'fill' ? FILL_CURSOR_DIAMETER : lineWidth * scale,
-    });
-  };
+      setCursorIndicator({
+        leftPercent: ((clientX - bounds.left) / bounds.width) * 100,
+        topPercent: ((clientY - bounds.top) / bounds.height) * 100,
+        diameter: tool === 'fill' ? FILL_CURSOR_DIAMETER : lineWidth * scale,
+      });
+    },
+    [tool, lineWidth, setCursorIndicator],
+  );
 
   const updateCursorIndicator = (event: PointerEvent<HTMLCanvasElement>) => {
     lastPointerClient.current = { clientX: event.clientX, clientY: event.clientY };
@@ -253,7 +256,7 @@ export function DrawingScreen({ mode, onModeChange, onDrawingComplete }: Drawing
       lastPointerClient.current.clientX,
       lastPointerClient.current.clientY,
     );
-  }, [tool, lineWidth]);
+  }, [updateCursorIndicatorAt]);
 
   const drawDot = (context: CanvasRenderingContext2D, point: Point) => {
     context.beginPath();
