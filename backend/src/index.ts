@@ -48,10 +48,6 @@ app.get('/ws/display', (c) => {
   return room.fetch(c.req.raw);
 });
 
-app.get('/', (c) => {
-  return c.text('Hello Hono!');
-});
-
 app.get('/api/images/:key{.+}', async (c) => {
   const key = c.req.param('key');
 
