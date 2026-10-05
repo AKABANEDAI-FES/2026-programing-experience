@@ -23,9 +23,6 @@
   left: 0;
   display: grid;
   justify-items: center;
-  /* 画像が読み込めないときも位置が分かるようにしておく */
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 24px;
   will-change: transform;
 }
 
