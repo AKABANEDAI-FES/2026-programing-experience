@@ -11,7 +11,6 @@ import {
 import { useCreatureStream } from './useCreatureStream.ts';
 import styles from './DisplayPage.module.css';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8787';
 const MAX_DELTA_MS = 100;
 
 type CreatureNode = {
@@ -21,7 +20,7 @@ type CreatureNode = {
 };
 
 const toImageUrl = (imageUrl: string): string =>
-  imageUrl.startsWith('http') ? imageUrl : `${API_BASE_URL}/api/images/${imageUrl}`;
+  imageUrl.startsWith('http') ? imageUrl : `/api/images/${imageUrl}`;
 
 export function DisplayPage() {
   const [creatures, setCreatures] = useState<Creature[]>([]);

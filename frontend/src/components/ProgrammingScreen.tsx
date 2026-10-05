@@ -42,7 +42,7 @@ export function ProgrammingScreen({ imageData, onReleaseComplete }: ProgrammingS
     let result: ReleaseResponse;
 
     try {
-      response = await fetch('http://localhost:8787/api/release', {
+      response = await fetch('/api/release', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

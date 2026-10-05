@@ -4,6 +4,7 @@ import type { ReleaseResponse } from 'shared';
 import { createCreatureAddedMessage } from './lib/display';
 import { fingerprintReleaseRequest, isValidIdempotencyKey } from './lib/idempotency';
 import { decodeImageDataUrl } from './lib/image';
+import { getAllowedOrigins, isAllowedOrigin } from './lib/origin';
 import { saveImage, type SavedImage } from './lib/storage';
 import { validateReleaseRequest } from './validation';
 
@@ -11,15 +12,8 @@ type Bindings = CloudflareBindings & {
   ALLOWED_ORIGINS?: string;
 };
 
-const DEVELOPMENT_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173'];
 const DISPLAY_ROOM_NAME = 'main';
 const CREATURE_IMAGE_KEY_PREFIX = 'creatures/';
-
-const getAllowedOrigins = (configuredOrigins?: string): string[] => {
-  return (configuredOrigins?.split(',') ?? DEVELOPMENT_ORIGINS)
-    .map((allowedOrigin) => allowedOrigin.trim())
-    .filter(Boolean);
-};
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -44,10 +38,7 @@ app.get('/ws/display', (c) => {
     return c.text('WebSocket接続が必要です', 426);
   }
 
-  const origin = c.req.header('Origin');
-  const allowedOrigins = getAllowedOrigins(c.env.ALLOWED_ORIGINS);
-
-  if (!origin || !allowedOrigins.includes(origin)) {
+  if (!isAllowedOrigin(c.req.header('Origin'), c.req.url, c.env.ALLOWED_ORIGINS)) {
     return c.text('許可されていない接続元です', 403);
   }
 
@@ -55,10 +46,6 @@ app.get('/ws/display', (c) => {
   const room = c.env.DISPLAY_ROOM.get(id);
 
   return room.fetch(c.req.raw);
-});
-
-app.get('/', (c) => {
-  return c.text('Hello Hono!');
 });
 
 app.get('/api/images/:key{.+}', async (c) => {
