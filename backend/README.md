@@ -19,12 +19,10 @@ Run the following command from the repository root:
 npx wrangler secret put RELEASE_TOKEN --config backend/wrangler.jsonc
 ```
 
-For local development, create `backend/.dev.vars` (this file is ignored by Git) with the same kind
-of value:
-
-```txt
-RELEASE_TOKEN=replace-with-a-random-token
-```
+For local development, no setup is needed. `npm run dev` creates `backend/.dev.vars` (ignored by
+Git) from `.dev.vars.example` if it does not exist, and the participant page uses the same
+development token (`DEV_RELEASE_TOKEN`) while running on the Vite dev server. This token is only for
+local development and is never used in production builds.
 
 Before using each venue PC, open the participant page on that PC and set the same token in the
 browser console, then reload the page:
