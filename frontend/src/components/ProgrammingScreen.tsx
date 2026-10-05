@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { MAX_COMMANDS, type Command, type ReleaseRequest, type ReleaseResponse } from 'shared';
 import {
+  DEV_RELEASE_TOKEN,
   getReleaseAuthorizationHeader,
   prepareSubmissionAttempt,
   shouldRecoverIdempotencyKey,
@@ -36,7 +37,11 @@ export function ProgrammingScreen({ imageData, onReleaseComplete }: ProgrammingS
   }, []);
 
   const sendSubmission = async (attempt: SubmissionAttempt, keyRecoveryCount = 0) => {
-    const authorization = getReleaseAuthorizationHeader(window.localStorage);
+    // 開発中（npm run dev）だけ、トークン未設定でも開発用トークンで放流できるようにする
+    const authorization = getReleaseAuthorizationHeader(
+      window.localStorage,
+      import.meta.env.DEV ? DEV_RELEASE_TOKEN : null,
+    );
 
     if (authorization === null) {
       setReleaseState('error');

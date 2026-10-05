@@ -28,6 +28,32 @@ test('共有トークンがない、またはlocalStorageを読めない場合�
   );
 });
 
+test('トークンが保存されていない場合は開発用のトークンを使う', () => {
+  assert.equal(
+    getReleaseAuthorizationHeader({ getItem: () => null }, 'dev-token'),
+    'Bearer dev-token',
+  );
+  assert.equal(
+    getReleaseAuthorizationHeader(
+      {
+        getItem: () => {
+          throw new Error('storage unavailable');
+        },
+      },
+      'dev-token',
+    ),
+    'Bearer dev-token',
+  );
+});
+
+test('トークンが保存されている場合は開発用のトークンより優先する', () => {
+  const storage = {
+    getItem: (key: string) => (key === RELEASE_TOKEN_STORAGE_KEY ? 'shared-secret' : null),
+  };
+
+  assert.equal(getReleaseAuthorizationHeader(storage, 'dev-token'), 'Bearer shared-secret');
+});
+
 test('同じ本文の再送では同じキーを再利用する', () => {
   const original = { key: 'first-key', body: '{"commands":[]}' };
   const retry = prepareSubmissionAttempt(original.body, original, () => 'unexpected-key');

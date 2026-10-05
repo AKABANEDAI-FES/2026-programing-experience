@@ -27,7 +27,27 @@
    npx wrangler login
    ```
 
+3. 放流用トークン（#74）を Worker の Secret に設定する。十分に長いランダムな値を使い、ソースコードや Issue・PR には書かない
+
+   ```bash
+   npx wrangler secret put RELEASE_TOKEN --config backend/wrangler.jsonc
+   ```
+
+   設定していないと、放流 API はすべて `503`（`RELEASE_AUTH_UNAVAILABLE`）を返します。
+
 Durable Object は初回のデプロイで自動的に作られます。
+
+## 会場 PC の準備
+
+各会場 PC の Chrome で参加者画面を開き、開発者ツールのコンソールで、Worker に設定したものと同じトークンを保存してから再読み込みします。
+
+```js
+localStorage.setItem('programming-experience-release-token', '<Worker に設定したトークン>');
+```
+
+- トークンはブラウザに保存されるため、**シークレットウィンドウでは使わない**でください。閉じたときにトークンが消え、放流できなくなります。
+- キオスク設定（#22）で開発者ツールを無効にする前に設定してください。
+- 大画面（`/display`）にはトークンは不要です。
 
 ## デプロイする
 
@@ -41,6 +61,4 @@ npm run deploy
 
 `npm run dev` のまま使えます。Vite（`localhost:5173`）が `/api` と `/ws` を `wrangler dev`（`localhost:8787`）へ転送するので、本番と同じパスで動作確認できます。
 
-## 注意
-
-- #74（不正な投稿の防止）が終わるまでは、公開 URL をチームの外に出さないでください。
+放流用トークンの設定も不要です。`npm run dev` で起動すると、`backend/.dev.vars` がなければ `.dev.vars.example` から作られ、参加者画面も同じ開発用トークンを使います。開発用トークンは本番のビルドには含まれません。

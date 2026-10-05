@@ -76,7 +76,7 @@
 
 認証情報がない、または共有トークンが一致しない場合は `401 Unauthorized` と `code: "UNAUTHORIZED"` を返します。認証に失敗したリクエストは、バリデーション、R2保存、WebSocket通知を行いません。
 
-Workerに `RELEASE_TOKEN` Secretが設定されていない場合は `503 Service Unavailable` と `code: "RELEASE_AUTH_UNAVAILABLE"` を返します。共有トークンはソースコードやViteの環境変数へ埋め込まず、本番ではWorker Secretと会場PCのlocalStorageに設定します。ローカル開発では、Git管理対象外の `backend/.dev.vars` に `RELEASE_TOKEN` を設定し、ブラウザのlocalStorageにも同じ値を設定します。
+Workerに `RELEASE_TOKEN` Secretが設定されていない場合は `503 Service Unavailable` と `code: "RELEASE_AUTH_UNAVAILABLE"` を返します。共有トークンはソースコードやViteの環境変数へ埋め込まず、本番ではWorker Secretと会場PCのlocalStorageに設定します。ローカル開発では、`npm run dev` が `backend/.dev.vars`（Git管理対象外）を作成し、参加者画面も同じ開発用トークンを自動で使います（`docs/deploy.md`）。
 
 同じキーの処理中、または同じキーが異なるリクエスト内容で使われた場合は `409 Conflict` を返します。処理中は `code: "REQUEST_IN_PROGRESS"`、キー再利用時は `code: "IDEMPOTENCY_KEY_REUSED"` を設定します。
 

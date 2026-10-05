@@ -2,16 +2,30 @@ import type { ReleaseResponse } from 'shared';
 
 export const RELEASE_TOKEN_STORAGE_KEY = 'programming-experience-release-token';
 
+/** 開発環境（npm run dev）だけで使う放流トークン。backend/.dev.vars.example と同じ値にする */
+export const DEV_RELEASE_TOKEN = 'local-dev-release-token';
+
 type StorageReader = Pick<Storage, 'getItem'>;
 
-export const getReleaseAuthorizationHeader = (storage: StorageReader): string | null => {
-  try {
-    const token = storage.getItem(RELEASE_TOKEN_STORAGE_KEY)?.trim();
+/**
+ * 放流 API に付ける Authorization ヘッダーを作る。
+ * ブラウザに保存されたトークンを優先し、なければ fallbackToken（開発環境のみ渡す）を使う。
+ */
+export const getReleaseAuthorizationHeader = (
+  storage: StorageReader,
+  fallbackToken: string | null = null,
+): string | null => {
+  let token: string | undefined;
 
-    return token ? `Bearer ${token}` : null;
+  try {
+    token = storage.getItem(RELEASE_TOKEN_STORAGE_KEY)?.trim();
   } catch {
-    return null;
+    token = undefined;
   }
+
+  token ||= fallbackToken ?? undefined;
+
+  return token ? `Bearer ${token}` : null;
 };
 
 export type SubmissionAttempt = {
