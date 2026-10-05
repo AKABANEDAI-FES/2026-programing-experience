@@ -13,6 +13,7 @@ type Bindings = CloudflareBindings & {
 
 const DEVELOPMENT_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173'];
 const DISPLAY_ROOM_NAME = 'main';
+const CREATURE_IMAGE_KEY_PREFIX = 'creatures/';
 
 const getAllowedOrigins = (configuredOrigins?: string): string[] => {
   return (configuredOrigins?.split(',') ?? DEVELOPMENT_ORIGINS)
@@ -30,7 +31,7 @@ app.use(
 
       return allowedOrigins.includes(origin) ? origin : null;
     },
-    allowMethods: ['POST', 'OPTIONS'],
+    allowMethods: ['GET', 'POST', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Idempotency-Key'],
     maxAge: 600,
   }),
@@ -58,6 +59,29 @@ app.get('/ws/display', (c) => {
 
 app.get('/', (c) => {
   return c.text('Hello Hono!');
+});
+
+app.get('/api/images/:key{.+}', async (c) => {
+  const key = c.req.param('key');
+
+  if (
+    !key.startsWith(CREATURE_IMAGE_KEY_PREFIX) ||
+    key.length === CREATURE_IMAGE_KEY_PREFIX.length
+  ) {
+    return c.text('画像が見つかりません', 404);
+  }
+
+  const image = await c.env.IMAGES.get(key);
+
+  if (image === null) {
+    return c.text('画像が見つかりません', 404);
+  }
+
+  const headers = new Headers();
+  image.writeHttpMetadata(headers);
+  headers.set('ETag', image.httpEtag);
+
+  return new Response(image.body, { headers });
 });
 
 app.post('/api/release', async (c) => {
