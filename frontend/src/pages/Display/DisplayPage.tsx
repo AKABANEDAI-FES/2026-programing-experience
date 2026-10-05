@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Creature } from 'shared';
+import { MAX_CREATURES } from 'shared/release';
+import { addCreature } from '../../lib/display/creatureQueue.ts';
 import {
   CREATURE_HEIGHT,
   CREATURE_WIDTH,
@@ -25,16 +27,30 @@ const toImageUrl = (imageUrl: string): string =>
 
 export function DisplayPage() {
   const [creatures, setCreatures] = useState<Creature[]>([]);
+  // setState の更新関数は StrictMode で2回呼ばれるため、副作用を伴う追加処理は ref の値をもとに行う
+  const creaturesRef = useRef<Creature[]>([]);
   const motions = useRef(new Map<string, CreatureMotion>());
   const commands = useRef(new Map<string, Creature['commands']>());
   const nodes = useRef(new Map<string, CreatureNode>());
 
   const handleCreature = useCallback((creature: Creature) => {
+    const result = addCreature(creaturesRef.current, creature, MAX_CREATURES);
+
+    if (result.creatures === creaturesRef.current) {
+      return;
+    }
+
+    for (const { id } of result.removed) {
+      motions.current.delete(id);
+      commands.current.delete(id);
+    }
+
     const bounds = { width: window.innerWidth, height: window.innerHeight };
 
     motions.current.set(creature.id, createMotion(bounds));
     commands.current.set(creature.id, creature.commands);
-    setCreatures((previous) => [...previous, creature]);
+    creaturesRef.current = result.creatures;
+    setCreatures(result.creatures);
   }, []);
 
   const status = useCreatureStream(handleCreature);
