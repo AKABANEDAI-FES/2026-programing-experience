@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Creature, DisplayMessage } from 'shared';
+import { toWebSocketUrl } from '../../lib/display/webSocketUrl.ts';
 
-const WS_URL = import.meta.env.VITE_WS_URL ?? 'ws://localhost:8787/ws/display';
 const RECONNECT_DELAY_MS = 3000;
 
 export type ConnectionStatus = 'connecting' | 'open' | 'closed';
@@ -33,7 +33,7 @@ export const useCreatureStream = (onCreature: (creature: Creature) => void) => {
 
     const connect = () => {
       setStatus('connecting');
-      socket = new WebSocket(WS_URL);
+      socket = new WebSocket(toWebSocketUrl('/ws/display', window.location.href));
 
       socket.addEventListener('open', () => setStatus('open'));
 
