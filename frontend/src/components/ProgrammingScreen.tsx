@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { MAX_COMMANDS, type Command, type ReleaseRequest, type ReleaseResponse } from 'shared';
 import {
+  getReleaseAuthorizationHeader,
   prepareSubmissionAttempt,
   shouldRecoverIdempotencyKey,
   type SubmissionAttempt,
@@ -35,6 +36,14 @@ export function ProgrammingScreen({ imageData, onReleaseComplete }: ProgrammingS
   }, []);
 
   const sendSubmission = async (attempt: SubmissionAttempt, keyRecoveryCount = 0) => {
+    const authorization = getReleaseAuthorizationHeader(window.localStorage);
+
+    if (authorization === null) {
+      setReleaseState('error');
+      setFeedbackMessage('この端末は放流用に設定されていません。スタッフに知らせてください。');
+      return;
+    }
+
     setReleaseState('sending');
     setFeedbackMessage('作品を保存しています…');
 
@@ -45,6 +54,7 @@ export function ProgrammingScreen({ imageData, onReleaseComplete }: ProgrammingS
       response = await fetch('http://localhost:8787/api/release', {
         method: 'POST',
         headers: {
+          Authorization: authorization,
           'Content-Type': 'application/json',
           'Idempotency-Key': attempt.key,
         },

@@ -11,6 +11,7 @@ import {
 const IMAGE =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 const KEY = '123e4567-e89b-42d3-a456-426614174000';
+const RELEASE_TOKEN = 'test-release-token';
 
 type HarnessOptions = {
   putFailure?: 'before-write' | 'after-write';
@@ -69,6 +70,7 @@ const createHarness = (options: HarnessOptions = {}) => {
 
   const env = {
     ALLOWED_ORIGINS: undefined,
+    RELEASE_TOKEN,
     DISPLAY_ROOM: { idFromName: () => 'main', get: () => room },
     IMAGES: {
       head: async (key: string) => {
@@ -102,7 +104,11 @@ const requestRelease = (body: ReleaseRequest, key: string, env: object) =>
     '/api/release',
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Idempotency-Key': key },
+      headers: {
+        Authorization: `Bearer ${RELEASE_TOKEN}`,
+        'Content-Type': 'application/json',
+        'Idempotency-Key': key,
+      },
       body: JSON.stringify(body),
     },
     env,
@@ -125,6 +131,41 @@ test('空コマンドを受け付け、R2保存後にmodeなしの通知を送�
   const message = harness.notifications[0] as { creature: Record<string, unknown> };
   assert.deepEqual(message.creature.commands, []);
   assert.equal('mode' in message.creature, false);
+});
+
+test('認証ヘッダーがない、またはトークンが異なる場合は401を返す', async () => {
+  const harness = createHarness();
+  const request = {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Idempotency-Key': KEY },
+    body: JSON.stringify(createBody()),
+  };
+
+  const missing = await app.request('/api/release', request, harness.env);
+  const invalid = await app.request(
+    '/api/release',
+    { ...request, headers: { ...request.headers, Authorization: 'Bearer wrong-token' } },
+    harness.env,
+  );
+
+  assert.equal(missing.status, 401);
+  assert.equal((await missing.json()).code, 'UNAUTHORIZED');
+  assert.equal(missing.headers.get('WWW-Authenticate'), 'Bearer');
+  assert.equal(invalid.status, 401);
+  assert.equal(harness.puts.length, 0);
+  assert.equal(harness.records.size, 0);
+});
+
+test('サーバーに共有トークンが未設定の場合は503を返す', async () => {
+  const harness = createHarness();
+  const env = { ...harness.env, RELEASE_TOKEN: undefined };
+
+  const response = await requestRelease(createBody(), KEY, env);
+
+  assert.equal(response.status, 503);
+  assert.equal((await response.json()).code, 'RELEASE_AUTH_UNAVAILABLE');
+  assert.equal(harness.puts.length, 0);
+  assert.equal(harness.records.size, 0);
 });
 
 test('成功済みの同じ内容を再送してもR2保存・通知を重複しない', async () => {
@@ -157,7 +198,11 @@ test('キーがない、またはUUID v4でない場合は400を返す', async (
   const body = createBody();
   const missing = await app.request(
     '/api/release',
-    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${RELEASE_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    },
     harness.env,
   );
   const malformed = await requestRelease(body, 'not-a-uuid', harness.env);
@@ -246,7 +291,11 @@ test('不正JSONと画像・コマンド不正を保存前に拒否する', asyn
     '/api/release',
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Idempotency-Key': KEY },
+      headers: {
+        Authorization: `Bearer ${RELEASE_TOKEN}`,
+        'Content-Type': 'application/json',
+        'Idempotency-Key': KEY,
+      },
       body: '{',
     },
     harness.env,

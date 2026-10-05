@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { ReleaseResponse } from 'shared';
+import { isReleaseAuthorized } from './lib/auth';
 import { createCreatureAddedMessage } from './lib/display';
 import { fingerprintReleaseRequest, isValidIdempotencyKey } from './lib/idempotency';
 import { decodeImageDataUrl } from './lib/image';
@@ -9,6 +10,7 @@ import { validateReleaseRequest } from './validation';
 
 type Bindings = CloudflareBindings & {
   ALLOWED_ORIGINS?: string;
+  RELEASE_TOKEN?: string;
 };
 
 const DEVELOPMENT_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173'];
@@ -32,7 +34,7 @@ app.use(
       return allowedOrigins.includes(origin) ? origin : null;
     },
     allowMethods: ['GET', 'POST', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Idempotency-Key'],
+    allowHeaders: ['Authorization', 'Content-Type', 'Idempotency-Key'],
     maxAge: 600,
   }),
 );
@@ -85,6 +87,31 @@ app.get('/api/images/:key{.+}', async (c) => {
 });
 
 app.post('/api/release', async (c) => {
+  const configuredToken = c.env.RELEASE_TOKEN;
+
+  if (!configuredToken) {
+    console.error('RELEASE_TOKEN が設定されていません');
+
+    const errorResponse: ReleaseResponse = {
+      success: false,
+      code: 'RELEASE_AUTH_UNAVAILABLE',
+      message: '放流機能を利用できません。スタッフに知らせてください。',
+    };
+
+    return c.json(errorResponse, 503);
+  }
+
+  if (!isReleaseAuthorized(c.req.header('Authorization'), configuredToken)) {
+    const errorResponse: ReleaseResponse = {
+      success: false,
+      code: 'UNAUTHORIZED',
+      message: 'この端末からは作品を放流できません。',
+    };
+
+    c.header('WWW-Authenticate', 'Bearer');
+    return c.json(errorResponse, 401);
+  }
+
   const idempotencyKey = c.req.header('Idempotency-Key');
 
   if (!isValidIdempotencyKey(idempotencyKey)) {

@@ -13,6 +13,7 @@
 ### リクエスト（フロントから送るデータ）
 
 - **Headers**:
+  - `Authorization: Bearer <共有トークン>`（会場PCに設定した放流用トークン）
   - `Content-Type: application/json`
   - `Idempotency-Key: <UUID v4>`（同一作品の再送には同じキーを使用）
 - **Body**:
@@ -71,6 +72,10 @@
 }
 ```
 
+認証情報がない、または共有トークンが一致しない場合は `401 Unauthorized` と `code: "UNAUTHORIZED"` を返します。認証に失敗したリクエストは、バリデーション、R2保存、WebSocket通知を行いません。
+
+Workerに `RELEASE_TOKEN` Secretが設定されていない場合は `503 Service Unavailable` と `code: "RELEASE_AUTH_UNAVAILABLE"` を返します。共有トークンはソースコードやViteの環境変数へ埋め込まず、本番ではWorker Secretと会場PCのlocalStorageに設定します。ローカル開発では、Git管理対象外の `backend/.dev.vars` に `RELEASE_TOKEN` を設定し、ブラウザのlocalStorageにも同じ値を設定します。
+
 同じキーの処理中、または同じキーが異なるリクエスト内容で使われた場合は `409 Conflict` を返します。処理中は `code: "REQUEST_IN_PROGRESS"`、キー再利用時は `code: "IDEMPOTENCY_KEY_REUSED"` を設定します。
 
 ### 失敗時 (ステータスコード: 500 Internal Server Error)
@@ -85,6 +90,8 @@
 R2への保存結果や処理記録の状態を確認できない場合は `503 Service Unavailable` と `code: "RELEASE_STATUS_UNKNOWN"` を返します。この場合、フロントエンドは内容を保持し、同じキーで手動確認を続けます。
 
 APIの成功は画像がR2に保存されたことを意味します。WebSocket通知はベストエフォートで、通知に失敗してもAPIは成功を返します。
+
+放流用トークンは書き込み操作である `POST /api/release` だけに使用します。大画面のWebSocketは受信専用であり、画像取得APIも `creatures/` 配下の読み取りだけに制限されているため、これらには同じトークンを要求しません。
 
 ## 2. 画像取得API
 

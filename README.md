@@ -32,6 +32,8 @@ npm run dev
 - **フロントエンド（参加者用画面）:** `http://localhost:5173`
 - **バックエンド（APIサーバー）:** `http://localhost:8787`
 
+作品を放流するには、バックエンドとブラウザの両方に同じ放流用トークンを設定する必要があります。ローカル開発・本番運用の設定手順は [backend/README.md の認証設定](backend/README.md#release-api-authentication) を参照してください。
+
 ## 4. 主要なディレクトリ構成
 
 - **frontend/:** フロントエンドアプリケーション（React + TypeScript + Vite + CSS Modules）

@@ -1,5 +1,19 @@
 import type { ReleaseResponse } from 'shared';
 
+export const RELEASE_TOKEN_STORAGE_KEY = 'programming-experience-release-token';
+
+type StorageReader = Pick<Storage, 'getItem'>;
+
+export const getReleaseAuthorizationHeader = (storage: StorageReader): string | null => {
+  try {
+    const token = storage.getItem(RELEASE_TOKEN_STORAGE_KEY)?.trim();
+
+    return token ? `Bearer ${token}` : null;
+  } catch {
+    return null;
+  }
+};
+
 export type SubmissionAttempt = {
   key: string;
   body: string;
