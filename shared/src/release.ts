@@ -41,6 +41,8 @@ export interface ReleaseErrorResponse {
   success: false;
   message: string;
   code?:
+    | 'UNAUTHORIZED'
+    | 'RELEASE_AUTH_UNAVAILABLE'
     | 'REQUEST_IN_PROGRESS'
     | 'IDEMPOTENCY_KEY_REUSED'
     | 'IMAGE_SAVE_FAILED'

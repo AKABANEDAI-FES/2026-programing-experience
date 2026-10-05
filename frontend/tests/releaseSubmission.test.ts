@@ -1,9 +1,32 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  getReleaseAuthorizationHeader,
   prepareSubmissionAttempt,
+  RELEASE_TOKEN_STORAGE_KEY,
   shouldRecoverIdempotencyKey,
 } from '../src/lib/release-submission.ts';
+
+test('localStorageの共有トークンからAuthorizationヘッダーを作る', () => {
+  const storage = {
+    getItem: (key: string) => (key === RELEASE_TOKEN_STORAGE_KEY ? ' shared-secret ' : null),
+  };
+
+  assert.equal(getReleaseAuthorizationHeader(storage), 'Bearer shared-secret');
+});
+
+test('共有トークンがない、またはlocalStorageを読めない場合はnullを返す', () => {
+  assert.equal(getReleaseAuthorizationHeader({ getItem: () => null }), null);
+  assert.equal(getReleaseAuthorizationHeader({ getItem: () => '   ' }), null);
+  assert.equal(
+    getReleaseAuthorizationHeader({
+      getItem: () => {
+        throw new Error('storage unavailable');
+      },
+    }),
+    null,
+  );
+});
 
 test('同じ本文の再送では同じキーを再利用する', () => {
   const original = { key: 'first-key', body: '{"commands":[]}' };

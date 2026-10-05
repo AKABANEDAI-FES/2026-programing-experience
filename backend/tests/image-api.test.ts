@@ -94,4 +94,5 @@ test('画像取得APIのCORSでGETを許可する', async () => {
 
   assert.equal(response.status, 204);
   assert.match(response.headers.get('Access-Control-Allow-Methods') ?? '', /GET/);
+  assert.match(response.headers.get('Access-Control-Allow-Headers') ?? '', /Authorization/);
 });
