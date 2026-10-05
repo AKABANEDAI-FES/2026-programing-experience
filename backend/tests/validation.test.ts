@@ -4,7 +4,6 @@ import { MAX_SAY_TEXT_LENGTH } from 'shared/release';
 import { validateReleaseRequest } from '../src/validation.ts';
 
 const createRequestWithSayText = (text: string) => ({
-  mode: 'free',
   image_base64: 'data:image/png;base64,AAAA',
   commands: [{ type: 'say', text }],
 });

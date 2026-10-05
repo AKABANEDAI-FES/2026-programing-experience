@@ -40,10 +40,6 @@ export const validateReleaseRequest = (value: unknown): ReleaseRequestValidation
     return { success: false, message: 'リクエストボディはオブジェクトで指定してください' };
   }
 
-  if (value.mode !== 'free' && value.mode !== 'coloring') {
-    return { success: false, message: 'mode は "free" または "coloring" を指定してください' };
-  }
-
   if (typeof value.image_base64 !== 'string' || !PNG_DATA_URL_PATTERN.test(value.image_base64)) {
     return {
       success: false,
@@ -73,7 +69,6 @@ export const validateReleaseRequest = (value: unknown): ReleaseRequestValidation
   return {
     success: true,
     data: {
-      mode: value.mode,
       image_base64: value.image_base64,
       commands: value.commands as ReleaseRequest['commands'],
     },

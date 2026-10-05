@@ -11,15 +11,16 @@ export const saveImage = async (
   bucket: R2Bucket,
   image: DecodedImage,
   commands: Command[],
+  identity: SavedImage,
+  requestFingerprint: string,
 ): Promise<SavedImage> => {
-  const id = crypto.randomUUID();
-  const createdAt = Date.now();
-  const key = `creatures/${createdAt}-${id}.${image.extension}`;
-
-  await bucket.put(key, image.bytes, {
+  await bucket.put(identity.key, image.bytes, {
     httpMetadata: { contentType: image.contentType },
-    customMetadata: { commands: JSON.stringify(commands) },
+    customMetadata: {
+      commands: JSON.stringify(commands),
+      requestFingerprint,
+    },
   });
 
-  return { id, key, createdAt };
+  return identity;
 };

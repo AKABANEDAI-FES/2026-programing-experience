@@ -14,13 +14,12 @@ test('自由描画の放流から保存キーを含む通知メッセージを�
     { type: 'say', text: 'こんにちは' },
   ];
 
-  const message = createCreatureAddedMessage(saved, 'free', commands);
+  const message = createCreatureAddedMessage(saved, commands);
 
   assert.deepEqual(message, {
     type: 'creature_added',
     creature: {
       id: saved.id,
-      mode: 'free',
       imageUrl: saved.key,
       commands,
       createdAt: saved.createdAt,
@@ -29,24 +28,15 @@ test('自由描画の放流から保存キーを含む通知メッセージを�
   assert.equal(message.creature.commands, commands);
 });
 
-test('塗り絵の放流ではcoloringをそのまま使う', () => {
-  const message = createCreatureAddedMessage(saved, 'coloring', []);
+test('コマンドが空の場合も通知を作る', () => {
+  const message = createCreatureAddedMessage(saved, []);
 
-  assert.equal(message.creature.mode, 'coloring');
   assert.deepEqual(message.creature.commands, []);
-});
-
-test('modeが不正な値や未指定の場合はfreeにする', () => {
-  for (const mode of ['invalid', 'COLORING', '', undefined, null, 123, true, {}, []]) {
-    const message = createCreatureAddedMessage(saved, mode, []);
-
-    assert.equal(message.creature.mode, 'free');
-  }
 });
 
 test('commandsが配列でない場合は空配列にする', () => {
   for (const commands of [undefined, null, 'commands', 123, true, {}, { length: 1 }]) {
-    const message = createCreatureAddedMessage(saved, 'free', commands);
+    const message = createCreatureAddedMessage(saved, commands);
 
     assert.deepEqual(message.creature.commands, []);
   }

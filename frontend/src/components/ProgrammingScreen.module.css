@@ -43,7 +43,7 @@
 
 .editor {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
   gap: 8px;
   min-height: 0;
 }
@@ -53,6 +53,11 @@
   color: #316b5f;
   font-size: 14px;
   font-weight: 700;
+}
+
+.emptyProgramHint {
+  color: #52635f;
+  font-size: 14px;
 }
 
 .stage,
@@ -79,6 +84,44 @@
 
 .editorContainer {
   overflow: hidden;
+}
+
+.editorContainer[inert] {
+  opacity: 0.7;
+}
+
+.statusMessage,
+.errorMessage {
+  margin: 0;
+  font-weight: 700;
+}
+
+.statusMessage {
+  color: #316b5f;
+}
+
+.errorMessage {
+  color: #b42318;
+}
+
+.releaseButton {
+  align-self: center;
+  min-width: 200px;
+  min-height: 48px;
+  padding: 12px 28px;
+  border: 0;
+  border-radius: 999px;
+  background: #316b5f;
+  color: #fff;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.releaseButton:disabled {
+  cursor: wait;
+  opacity: 0.65;
 }
 
 @media (max-width: 760px) {
