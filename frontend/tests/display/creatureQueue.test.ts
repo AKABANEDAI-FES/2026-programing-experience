@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MAX_CREATURES } from 'shared/release';
-import { addCreature } from '../../src/lib/display/creatureQueue.ts';
+import { addCreature, restoreCreatures } from '../../src/lib/display/creatureQueue.ts';
 
 const creature = (id: string) => ({ id });
+
+const saved = (id: string, createdAt: number) => ({ id, createdAt });
 
 const fill = (count: number) => Array.from({ length: count }, (_, index) => creature(`c${index}`));
 
@@ -37,4 +39,50 @@ test('同じ作品が二重に届いた場合は何もしない', () => {
 
   assert.equal(result.creatures, current);
   assert.deepEqual(result.removed, []);
+});
+
+test('表示中の作品がなければ、読み込んだ作品をそのまま表示する', () => {
+  const restored = [saved('a', 1), saved('b', 2)];
+
+  assert.deepEqual(restoreCreatures([], restored, 3), { creatures: restored, removed: [] });
+});
+
+test('読み込んだ作品がすべて表示中なら何もしない', () => {
+  const current = [saved('a', 1), saved('b', 2)];
+  const result = restoreCreatures(current, [saved('a', 1), saved('b', 2)], 3);
+
+  assert.equal(result.creatures, current);
+  assert.deepEqual(result.removed, []);
+});
+
+test('表示中の作品は二重に表示せず、まだない作品だけを加える', () => {
+  const result = restoreCreatures([saved('a', 1)], [saved('a', 1), saved('b', 2)], 3);
+
+  assert.deepEqual(result, { creatures: [saved('a', 1), saved('b', 2)], removed: [] });
+});
+
+test('読み込み中に通知で届いた作品より古い作品は、作成時刻の順に前へ並べる', () => {
+  const result = restoreCreatures([saved('new', 10)], [saved('a', 1), saved('b', 2)], 3);
+
+  assert.deepEqual(result.creatures, [saved('a', 1), saved('b', 2), saved('new', 10)]);
+});
+
+test('上限を超えた場合は作成時刻の古い作品から取り除く', () => {
+  const result = restoreCreatures(
+    [saved('a', 1), saved('new', 10)],
+    [saved('b', 2), saved('c', 3)],
+    3,
+  );
+
+  assert.deepEqual(result, {
+    creatures: [saved('b', 2), saved('c', 3), saved('new', 10)],
+    removed: [saved('a', 1)],
+  });
+});
+
+test('上限に入らない古い作品は表示せず、取り除く作品にも含めない', () => {
+  const current = [saved('b', 2), saved('c', 3), saved('d', 4)];
+  const result = restoreCreatures(current, [saved('a', 1)], 3);
+
+  assert.deepEqual(result, { creatures: current, removed: [] });
 });
