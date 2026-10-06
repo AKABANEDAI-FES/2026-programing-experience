@@ -1,4 +1,4 @@
-import { MAX_COMMANDS, MAX_SAY_TEXT_LENGTH, type ReleaseRequest } from 'shared/release';
+import { MAX_COMMANDS, MAX_SAY_TEXT_LENGTH, MOTIONS, type ReleaseRequest } from 'shared/release';
 
 const PNG_DATA_URL_PATTERN =
   /^data:image\/png;base64,(?=[A-Za-z0-9+/])(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
@@ -9,15 +9,17 @@ export type ReleaseRequestValidationResult =
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
+const allowedMotions = MOTIONS.map((motion) => `"${motion}"`).join(' または ');
+
 const validateCommand = (command: unknown, index: number): string | null => {
   if (!isRecord(command)) {
     return `commands[${index}] はオブジェクトで指定してください`;
   }
 
   if (command.type === 'move') {
-    return typeof command.motion === 'string'
+    return MOTIONS.some((motion) => motion === command.motion)
       ? null
-      : `commands[${index}].motion は文字列で指定してください`;
+      : `commands[${index}].motion は ${allowedMotions} を指定してください`;
   }
 
   if (command.type === 'say') {
