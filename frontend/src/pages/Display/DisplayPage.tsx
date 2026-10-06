@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Creature } from 'shared';
 import { MAX_CREATURES } from 'shared/release';
-import { addCreature } from '../../lib/display/creatureQueue.ts';
+import {
+  addCreature,
+  restoreCreatures,
+  type AddCreatureResult,
+} from '../../lib/display/creatureQueue.ts';
 import {
   CREATURE_HEIGHT,
   CREATURE_WIDTH,
@@ -32,9 +36,7 @@ export function DisplayPage() {
   const commands = useRef(new Map<string, Creature['commands']>());
   const nodes = useRef(new Map<string, CreatureNode>());
 
-  const handleCreature = useCallback((creature: Creature) => {
-    const result = addCreature(creaturesRef.current, creature, MAX_CREATURES);
-
+  const updateCreatures = useCallback((result: AddCreatureResult<Creature>) => {
     if (result.creatures === creaturesRef.current) {
       return;
     }
@@ -46,13 +48,30 @@ export function DisplayPage() {
 
     const bounds = { width: window.innerWidth, height: window.innerHeight };
 
-    motions.current.set(creature.id, createMotion(bounds));
-    commands.current.set(creature.id, creature.commands);
+    for (const creature of result.creatures) {
+      if (!motions.current.has(creature.id)) {
+        motions.current.set(creature.id, createMotion(bounds));
+        commands.current.set(creature.id, creature.commands);
+      }
+    }
+
     creaturesRef.current = result.creatures;
     setCreatures(result.creatures);
   }, []);
 
-  const status = useCreatureStream(handleCreature);
+  const handleCreature = useCallback(
+    (creature: Creature) =>
+      updateCreatures(addCreature(creaturesRef.current, creature, MAX_CREATURES)),
+    [updateCreatures],
+  );
+
+  const handleRestore = useCallback(
+    (restored: Creature[]) =>
+      updateCreatures(restoreCreatures(creaturesRef.current, restored, MAX_CREATURES)),
+    [updateCreatures],
+  );
+
+  const status = useCreatureStream(handleCreature, handleRestore);
 
   // ref は再描画や StrictMode でも null で呼ばれるため、ここでは DOM の参照だけを管理する。
   // 動きとコマンドは作品が画面から取り除かれるときに消す。
