@@ -10,6 +10,7 @@ import type { DrawMode } from 'shared';
 import inyaaOutline from '../assets/inyaa-outline.svg';
 import { DRAW_MODES, DRAW_MODE_COPY } from '../constants/drawModes';
 import { applyFillToEditingLayer } from '../lib/paint/applyFillToEditingLayer';
+import { clearOuterBackground } from '../lib/paint/clearOuterBackground';
 import { createChangedPixelMask } from '../lib/paint/createChangedPixelMask';
 import { floodFill, type Rgba } from '../lib/paint/floodFill';
 import type { DrawingHistoryEntry } from '../types/drawing';
@@ -491,6 +492,12 @@ export function DrawingScreen({ mode, onModeChange, onDrawingComplete }: Drawing
 
     compositeContext.drawImage(backgroundCanvas, 0, 0);
     compositeContext.drawImage(editingCanvas, 0, 0);
+
+    // 大画面ではキャラクターの形だけを泳がせたいので、外側の白い背景は透明にして渡す
+    const imageData = compositeContext.getImageData(0, 0, DRAWING_WIDTH, DRAWING_HEIGHT);
+    clearOuterBackground(imageData.data, DRAWING_WIDTH, DRAWING_HEIGHT);
+    compositeContext.putImageData(imageData, 0, 0);
+
     onDrawingComplete(compositeCanvas.toDataURL('image/png'));
   };
 
