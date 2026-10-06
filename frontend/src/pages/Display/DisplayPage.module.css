@@ -2,7 +2,10 @@
   position: fixed;
   inset: 0;
   overflow: hidden;
-  background: linear-gradient(180deg, #4fb3d9 0%, #1f6f9f 55%, #0d3b5c 100%);
+  /* 海の背景（R2 から配信、#88）。読み込めない環境では下のグラデーションが見える */
+  background:
+    url('/api/assets/ocean-background.jpg') center / cover no-repeat,
+    linear-gradient(180deg, #4fb3d9 0%, #1f6f9f 55%, #0d3b5c 100%);
   color: #fff;
 }
 
