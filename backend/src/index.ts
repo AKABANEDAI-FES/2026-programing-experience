@@ -16,6 +16,9 @@ type Bindings = CloudflareBindings & {
 
 const DISPLAY_ROOM_NAME = 'main';
 const CREATURE_IMAGE_KEY_PREFIX = 'creatures/';
+/** R2 の `assets/` から返してよい画面用の画像。素材の再配布を避けるためリポジトリには置かない（#88） */
+const DISPLAY_ASSET_NAMES = new Set(['ocean-background.jpg']);
+const DISPLAY_ASSET_CACHE_CONTROL = 'public, max-age=86400';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -71,6 +74,27 @@ app.get('/api/images/:key{.+}', async (c) => {
   headers.set('ETag', image.httpEtag);
 
   return new Response(image.body, { headers });
+});
+
+app.get('/api/assets/:name', async (c) => {
+  const name = c.req.param('name');
+
+  if (!DISPLAY_ASSET_NAMES.has(name)) {
+    return c.text('画像が見つかりません', 404);
+  }
+
+  const asset = await c.env.IMAGES.get(`assets/${name}`);
+
+  if (asset === null) {
+    return c.text('画像が見つかりません', 404);
+  }
+
+  const headers = new Headers();
+  asset.writeHttpMetadata(headers);
+  headers.set('ETag', asset.httpEtag);
+  headers.set('Cache-Control', DISPLAY_ASSET_CACHE_CONTROL);
+
+  return new Response(asset.body, { headers });
 });
 
 app.post('/api/release', async (c) => {

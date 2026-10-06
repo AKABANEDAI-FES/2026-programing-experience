@@ -96,3 +96,35 @@ test('画像取得APIのCORSでGETを許可する', async () => {
   assert.match(response.headers.get('Access-Control-Allow-Methods') ?? '', /GET/);
   assert.match(response.headers.get('Access-Control-Allow-Headers') ?? '', /Authorization/);
 });
+
+const ASSET_KEY = 'assets/ocean-background.jpg';
+const ASSET = { body: IMAGE_BYTES, contentType: 'image/jpeg', httpEtag: '"asset-etag"' };
+
+test('許可された画面用の画像をR2のassets配下から返し、キャッシュさせる', async () => {
+  const harness = createHarness(new Map([[ASSET_KEY, ASSET]]));
+
+  const response = await app.request('/api/assets/ocean-background.jpg', undefined, harness.env);
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('Content-Type'), 'image/jpeg');
+  assert.equal(response.headers.get('ETag'), '"asset-etag"');
+  assert.match(response.headers.get('Cache-Control') ?? '', /max-age=\d+/);
+  assert.deepEqual(harness.requestedKeys, [ASSET_KEY]);
+});
+
+test('画面用の画像がR2にない場合は404を返す', async () => {
+  const harness = createHarness();
+
+  const response = await app.request('/api/assets/ocean-background.jpg', undefined, harness.env);
+
+  assert.equal(response.status, 404);
+});
+
+test('許可されていない名前の画像はR2を読まずに404を返す', async () => {
+  const harness = createHarness(new Map([['assets/other.jpg', { ...ASSET, httpEtag: '"other"' }]]));
+
+  const response = await app.request('/api/assets/other.jpg', undefined, harness.env);
+
+  assert.equal(response.status, 404);
+  assert.deepEqual(harness.requestedKeys, []);
+});
