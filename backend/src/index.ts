@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { ReleaseResponse } from 'shared';
 import { isReleaseAuthorized } from './lib/auth';
+import { listRecentCreatures } from './lib/creatures';
 import { createCreatureAddedMessage } from './lib/display';
 import { fingerprintReleaseRequest, isValidIdempotencyKey } from './lib/idempotency';
 import { decodeImageDataUrl } from './lib/image';
@@ -95,6 +96,20 @@ app.get('/api/assets/:name', async (c) => {
   headers.set('Cache-Control', DISPLAY_ASSET_CACHE_CONTROL);
 
   return new Response(asset.body, { headers });
+});
+
+app.get('/api/creatures', async (c) => {
+  try {
+    const creatures = await listRecentCreatures(c.env.IMAGES);
+
+    c.header('Cache-Control', 'no-store');
+
+    return c.json(creatures);
+  } catch (error) {
+    console.error('作品の一覧を取得できませんでした', error);
+
+    return c.json({ message: '作品の一覧を取得できませんでした' }, 500);
+  }
 });
 
 app.post('/api/release', async (c) => {

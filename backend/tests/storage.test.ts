@@ -39,7 +39,7 @@ test('指定された作品キーで画像を保存する', async () => {
   assert.equal(bucket.calls[0].value, image.bytes);
 });
 
-test('Content-Type と commands を付けて保存する', async () => {
+test('Content-Type と作品ID・commands を付けて保存する', async () => {
   const bucket = createBucket();
   const commands: Command[] = [
     { type: 'move', motion: 'jump' },
@@ -56,7 +56,11 @@ test('Content-Type と commands を付けて保存する', async () => {
 
   assert.deepEqual(bucket.calls[0].options, {
     httpMetadata: { contentType: 'image/png' },
-    customMetadata: { commands: JSON.stringify(commands), requestFingerprint: 'fingerprint' },
+    customMetadata: {
+      id: '12345678-1234-4234-8234-123456789abc',
+      commands: JSON.stringify(commands),
+      requestFingerprint: 'fingerprint',
+    },
   });
 });
 

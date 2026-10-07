@@ -17,6 +17,7 @@ export const saveImage = async (
   await bucket.put(identity.key, image.bytes, {
     httpMetadata: { contentType: image.contentType },
     customMetadata: {
+      id: identity.id,
       commands: JSON.stringify(commands),
       requestFingerprint,
     },
