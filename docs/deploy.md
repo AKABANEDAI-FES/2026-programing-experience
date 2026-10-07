@@ -35,6 +35,14 @@
 
    設定していないと、放流 API はすべて `503`（`RELEASE_AUTH_UNAVAILABLE`）を返します。
 
+4. 大画面の背景画像（#88）を R2 にアップロードする。画像は[いらすとやの「海の中のイラスト」](https://www.irasutoya.com/2016/01/blog-post_620.html)（1920×1080）で、素材の再配布を避けるためリポジトリには置いていません。ダウンロードした画像を指定して実行します
+
+   ```bash
+   npx wrangler r2 object put 2026-programming-experience/assets/ocean-background.jpg --file <ダウンロードした画像> --content-type image/jpeg --remote --config backend/wrangler.jsonc
+   ```
+
+   アップロードしていなくても、大画面はグラデーションの背景で表示されます。
+
 Durable Object は初回のデプロイで自動的に作られます。
 
 ## 会場 PC の準備
@@ -62,3 +70,5 @@ npm run deploy
 `npm run dev` のまま使えます。Vite（`localhost:5173`）が `/api` と `/ws` を `wrangler dev`（`localhost:8787`）へ転送するので、本番と同じパスで動作確認できます。
 
 放流用トークンの設定も不要です。`npm run dev` で起動すると、`backend/.dev.vars` がなければ `.dev.vars.example` から作られ、参加者画面も同じ開発用トークンを使います。開発用トークンは本番のビルドには含まれません。
+
+大画面の背景画像も、初回の `npm run dev` でいらすとやから取得して手元の R2 に入れます。取得できなかった場合はグラデーションの背景で起動します。入れ直したいときは `backend/.wrangler/state/ocean-background.seeded` を削除してから起動してください。
