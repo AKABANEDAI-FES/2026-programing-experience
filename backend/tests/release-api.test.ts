@@ -99,7 +99,7 @@ const createHarness = (options: HarnessOptions = {}) => {
   return { env, objects, puts, notifications, records, room };
 };
 
-const requestRelease = (body: ReleaseRequest, key: string, env: object) =>
+const requestRelease = (body: unknown, key: string, env: object) =>
   app.request(
     '/api/release',
     {
@@ -315,4 +315,31 @@ test('不正JSONと画像・コマンド不正を保存前に拒否する', asyn
   assert.equal(invalidImage.status, 400);
   assert.equal(tooManyCommands.status, 400);
   assert.equal(harness.puts.length, 0);
+});
+
+test('定義されていない動きは400で拒否し、定義済みの動きは受け付ける', async () => {
+  const harness = createHarness();
+  const invalid = await requestRelease(
+    { image_base64: IMAGE, commands: [{ type: 'move', motion: 'fly' }] },
+    KEY,
+    harness.env,
+  );
+
+  assert.equal(invalid.status, 400);
+  assert.equal(
+    (await invalid.json()).message,
+    'commands[0].motion は "jump" または "spin" を指定してください',
+  );
+  assert.equal(harness.puts.length, 0);
+  assert.equal(harness.notifications.length, 0);
+  assert.equal(harness.records.size, 0);
+
+  const valid = await requestRelease(
+    createBody([{ type: 'move', motion: 'spin' }]),
+    KEY,
+    harness.env,
+  );
+
+  assert.equal(valid.status, 200);
+  assert.equal(harness.puts.length, 1);
 });
