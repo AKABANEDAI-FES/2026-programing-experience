@@ -617,7 +617,10 @@ export function DrawingScreen({ mode, onModeChange, onDrawingComplete }: Drawing
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerEnter={updateCursorIndicator}
-          onPointerLeave={() => setCursorIndicator(null)}
+          onPointerLeave={() => {
+            lastPointerClient.current = null;
+            setCursorIndicator(null);
+          }}
           onPointerUp={finishStroke}
           onPointerCancel={finishStroke}
         />
